@@ -1,0 +1,1231 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portofolio Siswa — MI AZ-ZAHRO</title>
+<style>
+:root{
+  --blue-900:#0b3d2e; --blue-800:#146c43; --blue-700:#15803d; --blue-600:#16a34a;
+  --blue-100:#cdeedd; --blue-50:#f0fdf4; --bg:#e9f6ee; --card:#ffffff;
+  --text:#1e293b; --muted:#64748b; --line:#e2e8f0; --amber:#f59e0b;
+  --green:#16a34a; --red:#ef4444;
+  --shadow:0 10px 30px rgba(11,61,46,.10);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+a{color:inherit;text-decoration:none}
+input,textarea,select{font-family:inherit}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:linear-gradient(135deg,var(--blue-800),var(--blue-600));
+  color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px;
+  box-shadow:0 4px 18px rgba(11,61,46,.18); position:sticky; top:0; z-index:20;
+}
+.topbar .cap{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:22px;flex:none}
+.topbar .titles{line-height:1.15}
+.topbar .titles b{font-size:17px;display:block}
+.topbar .titles span{font-size:12.5px;opacity:.85}
+.topbar .spacer{flex:1}
+.topbar .badge{font-size:12px;background:rgba(255,255,255,.18);padding:7px 13px;border-radius:999px;display:none}
+@media(min-width:640px){.topbar .badge{display:block}}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+
+/* ---------- Hero / search ---------- */
+.hero{text-align:center; padding:30px 20px 6px;}
+.hero h1{margin:0 0 8px;font-size:25px;color:var(--blue-900)}
+.hero p{margin:0 0 20px;color:var(--muted);font-size:14.5px}
+.search{max-width:560px;margin:0 auto;position:relative;}
+.search input{
+  width:100%;padding:15px 18px 15px 50px;border-radius:14px;border:1.5px solid #bfe3cd;
+  font-size:15.5px;background:#fff;box-shadow:var(--shadow);outline:none;color:var(--text);
+  transition:.18s border-color,.18s box-shadow;
+}
+.search input:focus{border-color:var(--blue-600);box-shadow:0 0 0 4px rgba(22,163,74,.16)}
+.search .ico{position:absolute;left:17px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--muted)}
+.search .clear{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:50%;background:#eaf5ee;color:var(--muted);
+  display:none;place-items:center;font-size:15px;
+}
+.search .clear.show{display:grid}
+
+/* ---------- Toolbar ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:18px 0 6px}
+.class-filter{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0 4px}
+.cls-chip{
+  background:#fff;border:1px solid var(--line);color:var(--blue-800);font-size:13px;font-weight:600;
+  padding:7px 14px;border-radius:999px;transition:.15s;
+}
+.cls-chip:hover{border-color:#bfe3cd}
+.cls-chip.active{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
+
+/* ---------- Student list ---------- */
+.list{margin-top:18px;display:grid;gap:10px}
+.student{
+  display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:6px 10px 6px 6px;box-shadow:0 2px 10px rgba(11,61,46,.05);
+  transition:.16s transform,.16s box-shadow,.16s border-color;
+}
+.student:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:#bfe3cd}
+.student-main{display:flex;align-items:center;gap:14px;flex:1;text-align:left;padding:8px 8px;min-width:0}
+.student .chev{color:#a9cdb8;font-size:20px;margin-left:auto;transition:.16s}
+.student:hover .chev{color:var(--blue-600);transform:translateX(3px)}
+.card-edit{
+  width:38px;height:38px;border-radius:10px;background:var(--blue-50);border:1px solid var(--line);
+  color:var(--blue-800);font-size:15px;flex:none;display:grid;place-items:center;transition:.15s;
+}
+.card-edit:hover{background:var(--blue-100)}
+.avatar{
+  width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;
+  color:#fff;font-weight:700;font-size:16px;letter-spacing:.5px;box-shadow:inset 0 -6px 14px rgba(0,0,0,.12);
+}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.student .meta{line-height:1.25;min-width:0}
+.student .meta b{font-size:15.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.student .meta span{font-size:12.5px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:46px 14px;font-size:14.5px;line-height:1.7}
+.empty .big{font-size:44px;display:block;margin-bottom:12px}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+  padding:9px 15px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--blue-800);
+  box-shadow:0 2px 8px rgba(11,61,46,.05);transition:.16s;
+}
+.btn:hover{border-color:#bfe3cd;background:var(--blue-50)}
+.btn.primary{background:var(--blue-700);color:#fff;border-color:var(--blue-700)}
+.btn.primary:hover{background:var(--blue-600)}
+.btn.danger{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
+.btn.danger:hover{background:#fecaca}
+
+/* ---------- Portfolio ---------- */
+.crumbbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.crumbs{font-size:13.5px;color:var(--muted);display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.crumbs b{color:var(--blue-800)}
+.edit-note{
+  display:flex;align-items:center;gap:9px;background:#fffbe6;border:1px solid #ffe7a3;color:#8a6100;
+  padding:11px 15px;border-radius:12px;font-size:13px;margin-bottom:16px;
+}
+.pf-head{
+  display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px;
+}
+.pf-head .avatar{width:60px;height:60px;font-size:21px}
+.pf-head h2{margin:0 0 3px;font-size:19px;color:var(--blue-900)}
+.pf-head .sub{font-size:13.5px;color:var(--muted)}
+.cv-head{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px}
+.cv-head .icon{width:56px;height:56px;border-radius:14px;background:var(--blue-50);border:1px solid var(--blue-100);display:grid;place-items:center;font-size:26px;flex:none}
+.cv-head h2{margin:0 0 3px;font-size:19px;color:var(--blue-900)}
+.cv-head .sub{font-size:13.5px;color:var(--muted)}
+.pf-grid{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:820px){.pf-grid{grid-template-columns:262px 1fr;align-items:start}}
+
+/* Sidebar folder tree */
+.side{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.side .side-title{padding:13px 16px;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--line)}
+.folder-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 16px;font-size:14px;color:var(--text);transition:.14s;border-left:3px solid transparent}
+.folder-item:hover{background:var(--blue-50)}
+.folder-item.active{background:var(--blue-50);border-left-color:var(--blue-600);color:var(--blue-800);font-weight:700}
+.folder-item .fico{font-size:17px;flex:none}
+.folder-item .num{color:var(--muted);font-weight:600;font-size:12.5px;min-width:20px}
+
+/* Content */
+.content{display:grid;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px;color:var(--blue-900)}
+.card .card-h .fico{font-size:18px}
+.card .card-b{padding:18px}
+.muted-note{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+
+/* Data diri */
+.profile{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.profile .photo{
+  width:118px;height:150px;border-radius:12px;flex:none;overflow:hidden;position:relative;
+  background:linear-gradient(160deg,#e3f7ec,#c9eed8);display:grid;place-items:center;border:1px solid #c6ecd6;
+}
+.profile .photo .avatar{width:74px;height:74px;font-size:26px}
+.photo-img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-click{cursor:pointer}
+.photo-overlay{
+  position:absolute;inset:0;background:rgba(11,61,46,.55);color:#fff;display:flex;flex-direction:column;
+  gap:5px;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;text-align:center;
+  opacity:0;transition:.15s;padding:6px;
+}
+.photo-click:hover .photo-overlay{opacity:1}
+.fields{flex:1;min-width:220px;display:grid;gap:9px}
+.fields .row{display:grid;grid-template-columns:118px 1fr;gap:10px;font-size:14px;align-items:center}
+.fields .row span{color:var(--muted)}
+.fields .row b{color:var(--text);font-weight:600}
+
+/* Inputs */
+.inp{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;color:var(--text);background:#fff;outline:none;transition:.15s}
+.inp:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgba(22,163,74,.15)}
+.fields .row .inp{font-weight:600}
+
+/* Edit lists */
+.edit-list{display:grid;gap:9px}
+.edit-row{display:grid;grid-template-columns:1.2fr 1.6fr .8fr auto;gap:8px;align-items:center}
+.edit-row.two{grid-template-columns:1.1fr 1.8fr auto}
+.edit-row.grade{grid-template-columns:2fr 1fr auto}
+.del-btn{width:36px;height:36px;border-radius:9px;background:#fee2e2;color:#dc2626;font-size:14px;display:grid;place-items:center;flex:none}
+.del-btn:hover{background:#fecaca}
+.add-btn{margin-top:10px;border-style:dashed;color:var(--blue-800)}
+@media(max-width:640px){ .edit-row,.edit-row.two,.edit-row.grade{grid-template-columns:1fr} .del-btn{width:100%} }
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--blue-50);color:var(--blue-800);font-size:12.5px;text-transform:uppercase;letter-spacing:.4px}
+td.val{text-align:right;font-weight:700}
+tr:last-child td{border-bottom:none}
+.avg{margin-top:14px;display:flex;align-items:center;justify-content:space-between;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:11px;padding:11px 15px;font-size:14px}
+.avg b{color:var(--blue-800);font-size:16px}
+
+/* Chips list (ekskul) */
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{background:var(--blue-50);border:1px solid var(--blue-100);color:var(--blue-800);padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:600}
+.chip small{display:block;font-weight:400;color:var(--muted);font-size:11.5px;margin-top:2px}
+
+/* Prestasi */
+.prestasi{display:grid;gap:12px}
+.prestasi .item{display:flex;gap:14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.prestasi .medal{width:44px;height:44px;border-radius:11px;flex:none;display:grid;place-items:center;font-size:22px;background:#fff7e6;border:1px solid #ffe0a8}
+.prestasi .item b{display:block;font-size:14.5px}
+.prestasi .item span{font-size:12.5px;color:var(--muted)}
+.prestasi .lvl{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--green);background:#e9f9ef;border:1px solid #bfe9cd;padding:5px 11px;border-radius:999px;white-space:nowrap}
+
+/* Files & gallery */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;transition:.16s;background:#fff}
+.tile:hover{border-color:#bfe3cd;box-shadow:0 6px 16px rgba(11,61,46,.10);transform:translateY(-2px)}
+.tile .fico{font-size:28px;display:block;margin-bottom:8px}
+.tile b{font-size:13px;display:block;word-break:break-word}
+.tile span{font-size:11.5px;color:var(--muted)}
+.tile .thumb{height:88px;border-radius:9px;margin-bottom:9px;display:grid;place-items:center;font-size:30px;background:linear-gradient(160deg,#eefbf3,#d9f3e3)}
+.tile.doc .fico{color:var(--red)}
+.tile.word .fico{color:var(--blue-700)}
+.tile.pdf .fico{color:var(--red)}
+.tile.img .fico{color:var(--green)}
+
+/* Upload */
+.upload{margin-top:16px;border:1.5px dashed #bfe3cd;border-radius:12px;padding:14px;background:linear-gradient(160deg,#f5fdf8,#eefbf3)}
+.upload-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.upload-head .u-title{font-size:13px;font-weight:700;color:var(--blue-800);display:flex;align-items:center;gap:7px}
+.upload-head .u-hint{font-size:11.5px;color:var(--muted)}
+.upload-head .u-btn{margin-left:auto;background:var(--blue-600);color:#fff;border-color:var(--blue-600);padding:8px 14px;font-size:13px}
+.upload-head .u-btn:hover{background:var(--blue-700)}
+.up-tiles{grid-template-columns:repeat(auto-fill,minmax(132px,1fr))}
+.up-empty{font-size:12.5px;color:var(--muted);padding:6px 2px}
+.up-tile{position:relative}
+.up-tile .rm-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,.92);color:#fff;font-size:12px;display:grid;place-items:center;z-index:2;opacity:0;transition:.15s}
+.up-tile:hover .rm-btn{opacity:1}
+.tile-link{display:block}
+
+.foot{text-align:center;color:var(--muted);font-size:12.5px;margin-top:34px}
+.foot .flow{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 18px;box-shadow:0 2px 8px rgba(11,61,46,.05)}
+.foot .flow b{color:var(--blue-800)}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{position:fixed;inset:0;background:rgba(11,61,46,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 14px;z-index:60;overflow:auto}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:540px;box-shadow:0 24px 60px rgba(11,61,46,.35);animation:pop .16s ease}
+@keyframes pop{from{transform:translateY(10px);opacity:.6}to{transform:none;opacity:1}}
+.modal-head{display:flex;align-items:center;padding:15px 18px;border-bottom:1px solid var(--line)}
+.modal-head b{font-size:16px;color:var(--blue-900);flex:1}
+.modal-close{width:34px;height:34px;border-radius:9px;background:#f1f5f9;color:var(--muted);font-size:15px;display:grid;place-items:center}
+.modal-body{padding:18px;display:grid;gap:13px}
+.modal-body label{display:grid;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.modal-actions{display:flex;gap:9px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.class-add{display:flex;gap:9px}
+.class-add .inp{flex:1}
+.class-row{display:flex;gap:9px;align-items:center}
+.class-row .inp{flex:1}
+.class-row .class-count{font-size:12px;color:var(--muted);white-space:nowrap}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--blue-900);color:#fff;padding:12px 20px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:80;box-shadow:0 10px 26px rgba(11,61,46,.3);max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="cap">🎓</div>
+  <div class="titles">
+    <b>Portofolio Siswa</b>
+    <span>MI AZ-ZAHRO</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="badge">Satu folder per siswa</div>
+</div>
+
+<div id="app"></div>
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+<input id="photoInput" type="file" accept="image/*" hidden />
+
+<script>
+/* ============================================================
+   PORTAL PORTOFOLIO MI AZ-ZAHRO
+   Data asli (bukan dummy) — diisi oleh wali kelas.
+   Tersimpan di browser (localStorage). Bisa Ekspor/Impor.
+   ============================================================ */
+
+const SECTIONS = [
+  {id:"diri",    num:"01", title:"Data Diri",                 icon:"👤"},
+  {id:"belajar", num:"02", title:"Hasil Belajar",             icon:"📊"},
+  {id:"ekskul",  num:"03", title:"Kegiatan Ekstrakurikuler",  icon:"⚽"},
+  {id:"prestasi",num:"04", title:"Prestasi",                  icon:"🏆"},
+  {id:"karya",   num:"05", title:"Karya & Projek",            icon:"📁"},
+  {id:"foto",    num:"06", title:"Foto / Dokumentasi",        icon:"📷"}
+];
+
+/* ---------- state & penyimpanan ---------- */
+const LS_KEY = "mi-azzahro-portofolio-v2";
+const app = document.getElementById("app");
+const modalRoot = document.getElementById("modalRoot");
+const toastEl = document.getElementById("toast");
+const photoInput = document.getElementById("photoInput");
+
+let students = [];   // data siswa asli
+let classes  = [];   // daftar kelas, mis. ["5A","5B"]
+let editMode = false;
+let homeFilter = "all";
+let viewState = { st:null, folder:"all" };
+
+let storageOK = true;
+function saveAll(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({ students, classes })); }
+  catch(e){ storageOK = false; }
+}
+function loadAll(){
+  try{
+    // uji apakah penyimpanan browser tersedia (bisa diblokir di sebagian browser/HP)
+    localStorage.setItem(LS_KEY + "__t", "1");
+    localStorage.removeItem(LS_KEY + "__t");
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(d && Array.isArray(d.students)) students = d.students.map(ensureStudentShape);
+      if(d && Array.isArray(d.classes)) classes = d.classes;
+    }
+  }catch(e){ storageOK = false; }
+}
+function ensureStudentShape(st){
+  st.sekolah  = st.sekolah || "MI AZ-ZAHRO";
+  st.photo    = st.photo || "";
+  st.nilai    = st.nilai || [];
+  st.ekskul   = st.ekskul || [];
+  st.prestasi = st.prestasi || [];
+  st.karya    = st.karya || [];
+  st.foto     = st.foto || [];
+  return st;
+}
+function newId(name){
+  return slug(name) + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+}
+function slug(s){
+  return String(s||"siswa").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,24) || "siswa";
+}
+
+/* ---------- helpers ---------- */
+function initials(name){
+  return String(name||"?").split(" ").filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+}
+const AV_COLORS = ["#16a34a","#0d9488","#15803d","#059669","#22c55e","#0891b2","#65a30d","#047857"];
+function colorFor(id){
+  let h=0; for(const ch of String(id)) h=(h*31+ch.charCodeAt(0))>>>0;
+  return AV_COLORS[h % AV_COLORS.length];
+}
+function avatar(st, cls){
+  const inner = st.photo ? `<img src="${st.photo}" alt="${esc(st.name)}" />` : initials(st.name);
+  return `<div class="avatar ${cls||''}" style="background:${colorFor(st.id)}">${inner}</div>`;
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>toastEl.classList.remove("show"), 2200);
+}
+function nilaiAvg(st){
+  const nums = (st.nilai||[]).map(r=>parseFloat(r[1])).filter(n=>!isNaN(n));
+  if(!nums.length) return null;
+  return Math.round(nums.reduce((a,b)=>a+b,0)/nums.length);
+}
+function classCount(c){ return students.filter(s=>s.kelas===c).length; }
+
+/* ---------- daftar siswa (dipakai beranda & halaman kelas) ---------- */
+function studentsListHTML(list, withEdit){
+  return list.map(s => `
+    <div class="student">
+      <button class="student-main" data-id="${s.id}">
+        ${avatar(s)}
+        <span class="meta">
+          <b>${esc(s.name)}</b>
+          <span>${s.kelas ? "Kelas "+esc(s.kelas)+" · " : ""}NIS ${esc(s.nis||"-")}</span>
+        </span>
+        <span class="chev">›</span>
+      </button>
+      ${withEdit ? `<button class="card-edit" data-edit-id="${s.id}" title="Edit siswa">✏️</button>` : ""}
+    </div>`).join("");
+}
+function wireStudents(container, withEdit){
+  container.querySelectorAll(".student-main").forEach(b=>{ b.onclick = ()=> location.hash = "#/s/" + b.dataset.id; });
+  if(withEdit) container.querySelectorAll(".card-edit").forEach(b=>{ b.onclick = ()=> openStudentForm(b.dataset.editId); });
+}
+
+/* ---------- tautan berbagi ---------- */
+function shareURL(hash){
+  try{ const u = new URL(location.href); u.hash = hash; return u.href; }
+  catch(e){ return location.href.split("#")[0] + hash; }
+}
+async function copyLink(hash, label){
+  const url = shareURL(hash);
+  try{
+    await navigator.clipboard.writeText(url);
+    toast((label || "Link") + " disalin ✓");
+  }catch(e){
+    openModal(`
+      <div class="modal-head"><b>Salin Link</b><button class="modal-close" id="lkX">✕</button></div>
+      <div class="modal-body">
+        <div style="font-size:13px;color:var(--muted)">Salin tautan di bawah, lalu bagikan ke wali murid:</div>
+        <input class="inp" id="lkUrl" value="${esc(url)}" readonly>
+      </div>`, 520);
+    const inp = modalRoot.querySelector("#lkUrl");
+    if(inp){ inp.focus(); inp.select(); }
+    modalRoot.querySelector("#lkX").onclick = closeModal;
+  }
+}
+
+/* ============================================================
+   MODAL & KONFIRMASI (custom, tidak pakai alert/confirm bawaan)
+   ============================================================ */
+function openModal(html, maxWidth){
+  modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal" style="${maxWidth?`max-width:${maxWidth}px`:""}">${html}</div></div>`;
+  const bd = modalRoot.querySelector(".modal-backdrop");
+  bd.addEventListener("mousedown", (e)=>{ if(e.target===bd) closeModal(); });
+}
+function closeModal(){ modalRoot.innerHTML = ""; }
+function confirmDialog(message, onOk, okLabel){
+  openModal(`
+    <div class="modal-head"><b>Konfirmasi</b><button class="modal-close" id="cfX">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:14px;line-height:1.6">${message}</div>
+      <div class="modal-actions">
+        <div style="flex:1"></div>
+        <button class="btn" id="cfNo">Batal</button>
+        <button class="btn danger" id="cfYes">${okLabel||"Ya, lanjutkan"}</button>
+      </div>
+    </div>`, 440);
+  modalRoot.querySelector("#cfX").onclick = closeModal;
+  modalRoot.querySelector("#cfNo").onclick = closeModal;
+  modalRoot.querySelector("#cfYes").onclick = ()=>{ closeModal(); onOk(); };
+}
+
+/* ============================================================
+   KELOLA KELAS (wali kelas atur kelas yang diampu)
+   ============================================================ */
+function openClassManager(){
+  const rows = classes.map(c=>`
+    <div class="class-row">
+      <input class="inp class-name" data-old="${esc(c)}" value="${esc(c)}">
+      <span class="class-count">${classCount(c)} siswa</span>
+      <button class="del-btn" data-del-class="${esc(c)}" title="Hapus kelas">✕</button>
+    </div>`).join("") || `<div class="up-empty">Belum ada kelas. Tambahkan kelas yang Anda ampu.</div>`;
+
+  openModal(`
+    <div class="modal-head"><b>🏫 Kelola Kelas</b><button class="modal-close" id="cmX">✕</button></div>
+    <div class="modal-body">
+      <div class="class-add">
+        <input id="newClass" class="inp" placeholder="Nama kelas baru, mis. 6B">
+        <button class="btn primary" id="addClassBtn">Tambah</button>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted)">Ubah nama kelas langsung pada kotak, lalu klik di luar kotak untuk menyimpan. Mengubah nama kelas otomatis memperbarui semua siswa di kelas itu.</div>
+      <div class="edit-list" id="classList">${rows}</div>
+    </div>`, 520);
+
+  modalRoot.querySelector("#cmX").onclick = closeModal;
+  modalRoot.querySelector("#addClassBtn").onclick = ()=>{
+    const inp = modalRoot.querySelector("#newClass");
+    const name = inp.value.trim();
+    if(!name) return;
+    if(classes.includes(name)){ toast("Kelas sudah ada"); return; }
+    classes.push(name);
+    classes.sort();
+    saveAll();
+    openClassManager();
+    toast("Kelas ditambahkan: " + name);
+  };
+  modalRoot.querySelector("#newClass").addEventListener("keydown", (e)=>{ if(e.key==="Enter") modalRoot.querySelector("#addClassBtn").click(); });
+
+  modalRoot.querySelectorAll(".class-name").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const oldName = inp.dataset.old;
+      const newName = inp.value.trim();
+      if(!newName || newName === oldName) { inp.value = oldName; return; }
+      if(classes.includes(newName)){ toast("Nama kelas sudah dipakai"); inp.value = oldName; return; }
+      classes = classes.map(c => c === oldName ? newName : c);
+      classes.sort();
+      students.forEach(s => { if(s.kelas === oldName) s.kelas = newName; });
+      saveAll();
+      openClassManager();
+      toast("Nama kelas diubah: " + oldName + " → " + newName);
+    });
+  });
+
+  modalRoot.querySelectorAll("[data-del-class]").forEach(btn=>{
+    btn.onclick = ()=>{
+      const name = btn.dataset.delClass;
+      const n = classCount(name);
+      confirmDialog(
+        `Hapus kelas <b>${esc(name)}</b>?` + (n ? ` <br><br>${n} siswa di kelas ini akan menjadi <b>tanpa kelas</b> (datanya tidak dihapus).` : ""),
+        ()=>{
+          classes = classes.filter(c => c !== name);
+          students.forEach(s => { if(s.kelas === name) s.kelas = ""; });
+          saveAll();
+          openClassManager();
+          toast("Kelas dihapus: " + name);
+        },
+        "Ya, hapus kelas"
+      );
+    };
+  });
+}
+
+/* ============================================================
+   BAGIKAN LINK (semua siswa & per kelas)
+   ============================================================ */
+function openShareLinks(){
+  const rows = classes.map(c=>`
+    <div class="class-row">
+      <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">${esc(c)}</span>
+      <span class="class-count">${classCount(c)} siswa</span>
+      <button class="btn" data-share-class="${esc(c)}">🔗 Salin</button>
+    </div>`).join("") || `<div class="up-empty">Belum ada kelas. Tambahkan dulu di “Kelola Kelas”.</div>`;
+
+  openModal(`
+    <div class="modal-head"><b>🔗 Bagikan Link</b><button class="modal-close" id="shX">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12.5px;color:var(--muted)">Satu link berisi seluruh siswa. Wali murid tinggal mencari nama anaknya.</div>
+      <div class="class-row">
+        <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">Semua Siswa</span>
+        <span class="class-count">${students.length} siswa</span>
+        <button class="btn primary" data-share-all="1">🔗 Salin</button>
+      </div>
+      <div class="edit-list">${rows}</div>
+      <div style="font-size:12px;color:var(--muted)">Link per siswa: buka portofolio siswa lalu klik “🔗 Link siswa”.</div>
+    </div>`, 560);
+
+  modalRoot.querySelector("#shX").onclick = closeModal;
+  const allBtn = modalRoot.querySelector("[data-share-all]");
+  if(allBtn) allBtn.onclick = ()=> copyLink("#/kelas/all", "Link semua siswa");
+  modalRoot.querySelectorAll("[data-share-class]").forEach(b=>{
+    b.onclick = ()=> copyLink("#/kelas/" + encodeURIComponent(b.dataset.shareClass), "Link kelas " + b.dataset.shareClass);
+  });
+}
+
+/* ============================================================
+   TAMBAH / EDIT / HAPUS SISWA
+   ============================================================ */
+function openStudentForm(id){
+  const st = id ? students.find(s=>s.id===id) : null;
+  openModal(`
+    <div class="modal-head"><b>${st ? "✏️ Edit Siswa" : "＋ Tambah Siswa"}</b><button class="modal-close" id="sfX">✕</button></div>
+    <div class="modal-body">
+      <label>Nama Lengkap *
+        <input id="fName" class="inp" value="${esc(st?st.name:"")}" placeholder="Nama siswa">
+      </label>
+      <label>Kelas
+        <input id="fKelas" class="inp" list="classOptions" value="${esc(st?st.kelas:"")}" placeholder="mis. 5A">
+      </label>
+      <datalist id="classOptions">${classes.map(c=>`<option value="${esc(c)}">`).join("")}</datalist>
+      <label>NIS / NISN
+        <input id="fNis" class="inp" value="${esc(st?st.nis:"")}" placeholder="Nomor induk siswa">
+      </label>
+      <label>Tempat / Tanggal Lahir
+        <input id="fTtl" class="inp" value="${esc(st?st.ttl:"")}" placeholder="mis. Malang, 15-06-2014">
+      </label>
+      <label>Alamat
+        <input id="fAlamat" class="inp" value="${esc(st?st.alamat:"")}" placeholder="Alamat tinggal">
+      </label>
+      <label>Sekolah
+        <input id="fSekolah" class="inp" value="${esc(st?(st.sekolah||"MI AZ-ZAHRO"):"MI AZ-ZAHRO")}">
+      </label>
+      <div class="modal-actions">
+        ${st ? `<button class="btn danger" id="sfDelete">🗑 Hapus Siswa</button>` : ""}
+        <div style="flex:1"></div>
+        <button class="btn" id="sfCancel">Batal</button>
+        <button class="btn primary" id="sfSave">Simpan</button>
+      </div>
+    </div>`, 540);
+
+  modalRoot.querySelector("#sfX").onclick = closeModal;
+  modalRoot.querySelector("#sfCancel").onclick = closeModal;
+  modalRoot.querySelector("#fName").focus();
+
+  modalRoot.querySelector("#sfSave").onclick = ()=>{
+    const name = modalRoot.querySelector("#fName").value.trim();
+    if(!name){ toast("Nama wajib diisi"); return; }
+    const kelas  = modalRoot.querySelector("#fKelas").value.trim();
+    const nis    = modalRoot.querySelector("#fNis").value.trim();
+    const ttl    = modalRoot.querySelector("#fTtl").value.trim();
+    const alamat = modalRoot.querySelector("#fAlamat").value.trim();
+    const sekolah= modalRoot.querySelector("#fSekolah").value.trim() || "MI AZ-ZAHRO";
+
+    if(kelas && !classes.includes(kelas)){ classes.push(kelas); classes.sort(); }
+
+    if(st){
+      Object.assign(st, { name, kelas, nis, ttl, alamat, sekolah });
+    }else{
+      const ns = ensureStudentShape({ id:newId(name), name, kelas, nis, ttl, alamat, sekolah, photo:"" });
+      students.push(ns);
+    }
+    saveAll();
+    closeModal();
+    if(document.getElementById("studentList")) renderHome();
+    else if(st){ viewState.st = st; rerender(); }
+    toast(st ? "Data siswa disimpan ✓" : "Siswa ditambahkan ✓");
+  };
+
+  const delBtn = modalRoot.querySelector("#sfDelete");
+  if(delBtn){
+    delBtn.onclick = ()=>{
+      confirmDialog(`Hapus siswa <b>${esc(st.name)}</b> beserta seluruh portofolionya?`, ()=>{
+        students = students.filter(s => s.id !== st.id);
+        for(const k in uploads) delete uploads[k];
+        saveAll();
+        location.hash = "";
+        renderHome();
+        toast("Siswa dihapus");
+      }, "Ya, hapus siswa");
+    };
+  }
+}
+
+/* ============================================================
+   EKSPOR / IMPOR DATA
+   ============================================================ */
+function exportData(){
+  const data = { app:"portofolio-mi-azzahro", exportedAt:new Date().toISOString(), classes, students };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "data-portofolio-mi-azzahro.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+  toast("Data diekspor ke file");
+}
+function importData(file){
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const d = JSON.parse(r.result);
+      if(!d || !Array.isArray(d.students)) throw new Error("format");
+      students = d.students.map(ensureStudentShape);
+      classes = Array.isArray(d.classes) ? d.classes.slice() : [];
+      students.forEach(s=>{ if(s.kelas && !classes.includes(s.kelas)) classes.push(s.kelas); });
+      classes.sort();
+      saveAll();
+      renderHome();
+      toast("Data berhasil diimpor ✓");
+    }catch(e){ toast("File tidak valid"); }
+  };
+  r.readAsText(file);
+}
+
+/* ============================================================
+   UNGGAH FILE per folder (selama sesi)
+   ============================================================ */
+const uploads = {};
+const ACCEPT = ".jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.zip";
+
+function fmtSize(b){
+  if(b < 1024) return b + " B";
+  if(b < 1048576) return (b/1024).toFixed(1) + " KB";
+  return (b/1048576).toFixed(1) + " MB";
+}
+function fileIcon(f){
+  const n = (f.name||"").toLowerCase();
+  if((f.type||"").startsWith("image/")) return "🖼️";
+  if(f.type === "application/pdf" || /\.pdf$/.test(n)) return "📄";
+  if(/\.(docx?|rtf)$/.test(n)) return "📝";
+  if(/\.(xlsx?|csv)$/.test(n)) return "📊";
+  if(/\.(pptx?)$/.test(n)) return "📽️";
+  if(/\.zip$/.test(n)) return "🗜️";
+  if(/\.txt$/.test(n)) return "📃";
+  return "📎";
+}
+function uploadBlock(st, folder){
+  return `
+    <div class="upload" data-st="${st.id}" data-folder="${folder}">
+      <div class="upload-head">
+        <div class="u-title">📎 Lampiran & Unggahan</div>
+        <div class="u-hint">jpg, png, pdf, doc, xls, ppt, dll.</div>
+        <button class="btn u-btn" type="button">＋ Unggah File</button>
+        <input class="up-input" type="file" accept="${ACCEPT}" multiple hidden />
+      </div>
+      <div class="tiles up-tiles"></div>
+    </div>`;
+}
+function renderUploadTiles(container, stId, folder){
+  const list = (uploads[stId] && uploads[stId][folder]) || [];
+  if(!list.length){ container.innerHTML = `<div class="up-empty">Belum ada file diunggah di folder ini.</div>`; return; }
+  container.innerHTML = list.map((f,i)=>{
+    const isImg = (f.type||"").startsWith("image/");
+    return `
+      <div class="tile up-tile">
+        <button class="rm-btn" type="button" data-idx="${i}" title="Hapus file">✕</button>
+        <a class="tile-link" href="${f.dataUrl}" download="${esc(f.name)}" target="_blank" rel="noopener">
+          ${isImg
+            ? `<div class="thumb" style="background-image:url('${f.dataUrl}');background-size:cover;background-position:center"></div>`
+            : `<span class="fico">${fileIcon(f)}</span>`}
+          <b>${esc(f.name)}</b><span>${fmtSize(f.size)} · klik buka</span>
+        </a>
+      </div>`;
+  }).join("");
+  container.querySelectorAll(".rm-btn").forEach(b=>{
+    b.addEventListener("click", (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      list.splice(+b.dataset.idx, 1);
+      renderUploadTiles(container, stId, folder);
+    });
+  });
+}
+function hydrateUploads(root){
+  root.querySelectorAll(".upload").forEach(box=>{
+    renderUploadTiles(box.querySelector(".up-tiles"), box.dataset.st, box.dataset.folder);
+  });
+}
+function handleUploadInput(input){
+  const box = input.closest(".upload");
+  const stId = box.dataset.st, folder = box.dataset.folder;
+  const tiles = box.querySelector(".up-tiles");
+  Array.from(input.files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      uploads[stId] = uploads[stId] || {};
+      uploads[stId][folder] = uploads[stId][folder] || [];
+      uploads[stId][folder].push({name:file.name, type:file.type, size:file.size, dataUrl:reader.result});
+      renderUploadTiles(tiles, stId, folder);
+      toast("File ditambahkan: " + file.name);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = "";
+}
+
+/* ============================================================
+   FOTO PROFIL
+   ============================================================ */
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, maxDim / Math.max(w, h));
+      w = Math.round(w*scale); h = Math.round(h*scale);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      try{ resolve(c.toDataURL("image/jpeg", quality)); }catch(e){ resolve(null); }
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+photoInput.addEventListener("change", async ()=>{
+  const f = photoInput.files[0];
+  photoInput.value = "";
+  if(!f || !viewState.st) return;
+  toast("Memproses foto...");
+  const dataUrl = await compressImage(f, 640, 0.82);
+  if(dataUrl){ viewState.st.photo = dataUrl; saveAll(); rerender(); toast("Foto profil diperbarui ✓"); }
+  else toast("Gagal memuat gambar");
+});
+
+/* ============================================================
+   EDIT MODE PORTOFOLIO
+   ============================================================ */
+function toggleEdit(){
+  editMode = !editMode;
+  if(!editMode) saveAll();
+  rerender();
+  toast(editMode ? "Mode edit aktif — ubah data lalu klik Selesai" : "Perubahan disimpan ✓");
+}
+function rerender(){
+  const y = window.scrollY;
+  renderPortfolio(viewState.st, viewState.folder);
+  window.scrollTo(0, y);
+}
+function updateHeader(){
+  const st = viewState.st;
+  const h = document.getElementById("pfName"); if(h) h.textContent = st.name;
+  const s = document.getElementById("pfSub");
+  if(s) s.textContent = `${st.kelas ? "Kelas "+st.kelas+" · " : ""}NIS ${st.nis||"-"} · ${st.sekolah||"MI AZ-ZAHRO"}`;
+  const t = document.getElementById("sideTitle"); if(t) t.textContent = "📂 Folder — " + st.name;
+}
+
+/* ============================================================
+   VIEW 1 — Beranda
+   ============================================================ */
+function renderHome(){
+  editMode = false;
+  app.innerHTML = `
+    <section class="hero">
+      <h1>Selamat datang, Wali Murid 👋</h1>
+      <p>Cari nama anak Anda di bawah ini, lalu klik untuk membuka portofolionya.</p>
+      <div class="search">
+        <span class="ico">🔍</span>
+        <input id="q" type="text" placeholder="Cari nama siswa..." autocomplete="off" />
+        <button class="clear" id="clearBtn" title="Hapus">✕</button>
+      </div>
+    </section>
+    <div class="wrap">
+      <div class="toolbar">
+        <button class="btn primary" id="addStudentBtn">＋ Tambah Siswa</button>
+        <button class="btn" id="manageClassBtn">🏫 Kelola Kelas</button>
+        <button class="btn" id="shareLinksBtn">🔗 Bagikan Link</button>
+        <button class="btn" id="exportBtn">⬇️ Ekspor Data</button>
+        <button class="btn" id="importBtn">⬆️ Impor Data</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden />
+      </div>
+      <div class="class-filter" id="classFilter"></div>
+      <div class="list" id="studentList"></div>
+      <div class="foot">
+        <div class="flow">
+          <b>Guru bagikan 1 link</b> <span>→</span> <b>Wali murid cari nama</b> <span>→</span>
+          <b>Klik nama</b> <span>→</span> <b>Portofolio terbuka</b>
+        </div>
+      </div>
+    </div>`;
+
+  const q = document.getElementById("q");
+  const clearBtn = document.getElementById("clearBtn");
+
+  document.getElementById("addStudentBtn").onclick = ()=> openStudentForm();
+  document.getElementById("manageClassBtn").onclick = openClassManager;
+  document.getElementById("shareLinksBtn").onclick = openShareLinks;
+  document.getElementById("exportBtn").onclick = exportData;
+  document.getElementById("importBtn").onclick = ()=> document.getElementById("importFile").click();
+  document.getElementById("importFile").addEventListener("change", (e)=>{
+    const f = e.target.files[0]; e.target.value = "";
+    if(f) importData(f);
+  });
+
+  function paintFilter(){
+    const box = document.getElementById("classFilter");
+    if(!students.length){ box.innerHTML = ""; return; }
+    const chips = [`<button class="cls-chip ${homeFilter==="all"?"active":""}" data-cls="all">Semua (${students.length})</button>`];
+    classes.forEach(c=>{
+      chips.push(`<button class="cls-chip ${homeFilter===c?"active":""}" data-cls="${esc(c)}">${esc(c)} (${classCount(c)})</button>`);
+    });
+    box.innerHTML = chips.join("");
+    box.querySelectorAll(".cls-chip").forEach(b=>{
+      b.onclick = ()=>{ homeFilter = b.dataset.cls; paint(); };
+    });
+  }
+
+  function paint(){
+    paintFilter();
+    const term = q.value.trim().toLowerCase();
+    clearBtn.classList.toggle("show", term.length > 0);
+
+    let found = students.filter(s =>
+      s.name.toLowerCase().includes(term) ||
+      String(s.kelas).toLowerCase().includes(term) ||
+      String(s.nis).includes(term)
+    );
+    if(homeFilter !== "all") found = found.filter(s => s.kelas === homeFilter);
+
+    const list = document.getElementById("studentList");
+
+    if(!students.length){
+      list.innerHTML = `<div class="empty"><span class="big">🗂️</span>
+        Belum ada data siswa.<br>Klik <b>＋ Tambah Siswa</b> untuk mulai mengisi kelas Anda.</div>`;
+      return;
+    }
+    if(!found.length){
+      list.innerHTML = `<div class="empty"><span class="big">🔎</span>
+        Tidak ada siswa yang cocok.<br>Coba ubah kata kunci atau pilih kelas lain.</div>`;
+      return;
+    }
+    list.innerHTML = studentsListHTML(found, true);
+    wireStudents(list, true);
+  }
+
+  q.addEventListener("input", paint);
+  clearBtn.addEventListener("click", ()=>{ q.value=""; q.focus(); paint(); });
+  paint();
+  q.focus();
+}
+
+/* ============================================================
+   VIEW — Halaman Kelas (satu link = semua siswa satu kelas)
+   ============================================================ */
+function renderClassView(cls){
+  editMode = false;
+  const isAll = cls === "all";
+  const title = isAll ? "Semua Siswa" : "Kelas " + cls;
+  const inClass = isAll ? students.slice() : students.filter(s => s.kelas === cls);
+
+  app.innerHTML = `
+    <div class="wrap">
+      <div class="crumbbar">
+        <button class="btn" id="backBtn">‹ Beranda</button>
+        <div class="crumbs"><a href="#">Portofolio Siswa</a> <span>›</span> <b>${esc(title)}</b></div>
+        <div style="flex:1"></div>
+        <button class="btn primary" id="cvShare">🔗 Salin link ${isAll ? "semua siswa" : "kelas ini"}</button>
+      </div>
+
+      <div class="cv-head">
+        <div class="icon">${isAll ? "🏫" : "🎒"}</div>
+        <div>
+          <h2>${esc(title)}</h2>
+          <div class="sub">${inClass.length} siswa${isAll ? "" : " · MI AZ-ZAHRO"}</div>
+        </div>
+      </div>
+
+      <div class="search" style="max-width:100%;margin-bottom:6px">
+        <span class="ico">🔍</span>
+        <input id="cvq" type="text" placeholder="Cari nama siswa..." autocomplete="off" />
+        <button class="clear" id="cvClear" title="Hapus">✕</button>
+      </div>
+
+      <div class="list" id="cvList"></div>
+      <div class="foot">Bagikan link ini ke wali murid — mereka tinggal mencari nama anaknya.</div>
+    </div>`;
+
+  const q = document.getElementById("cvq");
+  const clearBtn = document.getElementById("cvClear");
+
+  document.getElementById("backBtn").onclick = ()=>{ location.hash = ""; };
+  document.getElementById("cvShare").onclick = ()=> copyLink(
+    "#/kelas/" + (isAll ? "all" : encodeURIComponent(cls)),
+    isAll ? "Link semua siswa" : ("Link " + title)
+  );
+
+  function paint(){
+    const term = q.value.trim().toLowerCase();
+    clearBtn.classList.toggle("show", term.length > 0);
+    const found = inClass.filter(s =>
+      s.name.toLowerCase().includes(term) || String(s.nis).includes(term)
+    );
+    const list = document.getElementById("cvList");
+    if(!inClass.length){
+      list.innerHTML = `<div class="empty"><span class="big">🗂️</span>Belum ada siswa di ${esc(title)}.</div>`;
+      return;
+    }
+    if(!found.length){
+      list.innerHTML = `<div class="empty"><span class="big">🔎</span>Tidak ada siswa yang cocok.</div>`;
+      return;
+    }
+    list.innerHTML = studentsListHTML(found, false);
+    wireStudents(list, false);
+  }
+  q.addEventListener("input", paint);
+  clearBtn.addEventListener("click", ()=>{ q.value=""; q.focus(); paint(); });
+  paint();
+  q.focus();
+}
+
+/* ============================================================
+   VIEW 2 — Portofolio
+   ============================================================ */
+function dataDiriSection(st){
+  const school = st.sekolah || "MI AZ-ZAHRO";
+  if(editMode){
+    return `
+      <div class="card">
+        <div class="card-h"><span class="fico">👤</span> 01. Data Diri</div>
+        <div class="card-b">
+          <div class="profile">
+            <div class="photo photo-click" title="Klik untuk unggah / ganti foto">
+              ${st.photo ? `<img class="photo-img" src="${st.photo}" alt="${esc(st.name)}">` : avatar(st)}
+              <div class="photo-overlay">📷<span>${st.photo ? "Ganti Foto" : "Unggah Foto"}</span></div>
+            </div>
+            <div class="fields">
+              <div class="row"><span>Nama</span><input class="inp" data-field="name" value="${esc(st.name)}"></div>
+              <div class="row"><span>Kelas</span><input class="inp" data-field="kelas" value="${esc(st.kelas)}"></div>
+              <div class="row"><span>NIS</span><input class="inp" data-field="nis" value="${esc(st.nis)}"></div>
+              <div class="row"><span>TTL</span><input class="inp" data-field="ttl" value="${esc(st.ttl)}"></div>
+              <div class="row"><span>Alamat</span><input class="inp" data-field="alamat" value="${esc(st.alamat)}"></div>
+              <div class="row"><span>Sekolah</span><input class="inp" data-field="sekolah" value="${esc(school)}"></div>
+            </div>
+          </div>
+          ${uploadBlock(st, "diri")}
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="card">
+      <div class="card-h"><span class="fico">👤</span> 01. Data Diri</div>
+      <div class="card-b">
+        <div class="profile">
+          <div class="photo">${st.photo ? `<img class="photo-img" src="${st.photo}" alt="${esc(st.name)}">` : avatar(st)}</div>
+          <div class="fields">
+            <div class="row"><span>Nama</span><b>${esc(st.name)}</b></div>
+            <div class="row"><span>Kelas</span><b>${esc(st.kelas)||"-"}</b></div>
+            <div class="row"><span>NIS</span><b>${esc(st.nis)||"-"}</b></div>
+            <div class="row"><span>TTL</span><b>${esc(st.ttl)||"-"}</b></div>
+            <div class="row"><span>Alamat</span><b>${esc(st.alamat)||"-"}</b></div>
+            <div class="row"><span>Sekolah</span><b>${esc(school)}</b></div>
+          </div>
+        </div>
+        ${uploadBlock(st, "diri")}
+      </div>
+    </div>`;
+}
+
+function belajarSection(st){
+  const avg = nilaiAvg(st);
+  const body = editMode
+    ? `${st.nilai.length ? `<div class="edit-list">
+         ${st.nilai.map((r,i)=>`
+           <div class="edit-row grade">
+             <input class="inp" data-kind="nilai" data-idx="${i}" data-k="0" value="${esc(r[0])}" placeholder="Mata pelajaran">
+             <input class="inp" data-kind="nilai" data-idx="${i}" data-k="1" value="${esc(r[1])}" placeholder="Nilai">
+             <button class="del-btn" type="button" data-del-nilai="${i}" title="Hapus">✕</button>
+           </div>`).join("")}
+       </div>` : `<div class="up-empty">Belum ada nilai. Klik tombol di bawah untuk menambah.</div>`}
+       <button class="btn add-btn" type="button" data-add="nilai">＋ Tambah mata pelajaran</button>`
+    : (st.nilai.length
+        ? `<table><thead><tr><th>Mata Pelajaran</th><th style="text-align:right">Nilai</th></tr></thead>
+             <tbody>${st.nilai.map(r=>`<tr><td>${esc(r[0])}</td><td class="val">${esc(r[1])}</td></tr>`).join("")}</tbody></table>
+           <div class="avg"><span>Rata-rata nilai</span><b>${avg===null?"–":avg}</b></div>`
+        : `<div class="up-empty">Belum ada data nilai.</div>`);
+  return `
+    <div class="card">
+      <div class="card-h"><span class="fico">📊</span> 02. Hasil Belajar — Rapor / Nilai</div>
+      <div class="card-b">${body}${uploadBlock(st, "belajar")}</div>
+    </div>`;
+}
+
+function ekskulSection(st){
+  const body = editMode
+    ? `${st.ekskul.length ? `<div class="edit-list">
+         ${st.ekskul.map((e,i)=>`
+           <div class="edit-row two">
+             <input class="inp" data-kind="ekskul" data-idx="${i}" data-k="0" value="${esc(e[0])}" placeholder="Nama kegiatan">
+             <input class="inp" data-kind="ekskul" data-idx="${i}" data-k="1" value="${esc(e[1])}" placeholder="Jadwal / pembina">
+             <button class="del-btn" type="button" data-del-ekskul="${i}" title="Hapus">✕</button>
+           </div>`).join("")}
+       </div>` : `<div class="up-empty">Belum ada ekstrakurikuler.</div>`}
+       <button class="btn add-btn" type="button" data-add="ekskul">＋ Tambah ekstrakurikuler</button>`
+    : (st.ekskul.length
+        ? `<div class="chips">${st.ekskul.map(e=>`<span class="chip">${esc(e[0])}<small>${esc(e[1])}</small></span>`).join("")}</div>`
+        : `<div class="up-empty">Belum ada data ekstrakurikuler.</div>`);
+  return `
+    <div class="card">
+      <div class="card-h"><span class="fico">⚽</span> 03. Kegiatan Ekstrakurikuler</div>
+      <div class="card-b">${body}${uploadBlock(st, "ekskul")}</div>
+    </div>`;
+}
+
+function prestasiSection(st){
+  const body = editMode
+    ? `${st.prestasi.length ? `<div class="edit-list">
+         ${st.prestasi.map((p,i)=>`
+           <div class="edit-row">
+             <input class="inp" data-kind="prestasi" data-idx="${i}" data-k="0" value="${esc(p[0])}" placeholder="Nama prestasi">
+             <input class="inp" data-kind="prestasi" data-idx="${i}" data-k="1" value="${esc(p[1])}" placeholder="Detail (tingkat · tahun)">
+             <input class="inp" data-kind="prestasi" data-idx="${i}" data-k="2" value="${esc(p[2])}" placeholder="Tingkat">
+             <button class="del-btn" type="button" data-del-prestasi="${i}" title="Hapus">✕</button>
+           </div>`).join("")}
+       </div>` : `<div class="up-empty">Belum ada prestasi.</div>`}
+       <button class="btn add-btn" type="button" data-add="prestasi">＋ Tambah prestasi</button>`
+    : (st.prestasi.length
+        ? `<div class="prestasi">${st.prestasi.map(p=>`
+             <div class="item">
+               <div class="medal">🏅</div>
+               <div><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>
+               <div class="lvl">${esc(p[2])}</div>
+             </div>`).join("")}</div>`
+        : `<div class="up-empty">Belum ada data prestasi.</div>`);
+  return `
+    <div class="card">
+      <div class="card-h"><span class="fico">🏆</span> 04. Prestasi</div>
+      <div class="card-b">${body}${uploadBlock(st, "prestasi")}</div>
+    </div>`;
+}
+
+function fileOnlySection(st, folder, num, title, icon, note){
+  return `
+    <div class="card">
+      <div class="card-h"><span class="fico">${icon}</span> ${num}. ${title}</div>
+      <div class="card-b">
+        <p class="muted-note">${note}</p>
+        ${uploadBlock(st, folder)}
+      </div>
+    </div>`;
+}
+
+function sectionData(st, id){
+  switch(id){
+    case "diri": return dataDiriSection(st);
+    case "belajar": return belajarSection(st);
+    case "ekskul": return ekskulSection(st);
+    case "prestasi": return prestasiSection(st);
+    case "karya": return fileOnlySection(st, "karya", "05", "Karya & Projek", "📁", "Unggah karya & projek siswa (dokumen, gambar, video, dll.) di folder ini.");
+    case "foto": return fileOnlySection(st, "foto", "06", "Foto / Dokumentasi", "📷", "Unggah foto kegiatan & dokumentasi siswa di folder ini.");
+    default: return "";
+  }
+}
+
+function renderPortfolio(st, folder){
+  const cur = folder || "all";
+  viewState = { st, folder: cur };
+  const sections = cur === "all" ? SECTIONS : SECTIONS.filter(s=>s.id===cur);
+
+  app.innerHTML = `
+    <div class="wrap">
+      <div class="crumbbar">
+        <button class="btn" id="backBtn">‹ Kembali</button>
+        <div class="crumbs">
+          <a href="#">Portofolio Siswa</a> <span>›</span> <b>${esc(st.name)}</b>
+        </div>
+        <div style="flex:1"></div>
+        ${editMode ? `<button class="btn danger" id="delStudentBtn">🗑 Hapus</button>` : ""}
+        <button class="btn primary" id="editBtn">${editMode ? "✔ Simpan & Selesai" : "✏️ Edit Data"}</button>
+        <button class="btn" id="shareBtn">🔗 Link siswa</button>
+      </div>
+
+      ${editMode ? `<div class="edit-note">✏️ <span><b>Mode edit aktif.</b> Ketik langsung pada Data Diri, Hasil Belajar, Prestasi, dan Ekstrakurikuler. Klik foto profil untuk mengunggah foto. Klik <b>Simpan &amp; Selesai</b> bila sudah.</span></div>` : ""}
+
+      <div class="pf-head">
+        ${avatar(st, editMode ? "photo-click" : "")}
+        <div>
+          <h2 id="pfName">${esc(st.name)}</h2>
+          <div class="sub" id="pfSub">${st.kelas ? "Kelas "+esc(st.kelas)+" · " : ""}NIS ${esc(st.nis||"-")} · ${esc(st.sekolah || "MI AZ-ZAHRO")}</div>
+        </div>
+      </div>
+
+      <div class="pf-grid">
+        <aside class="side">
+          <div class="side-title" id="sideTitle">📂 Folder — ${esc(st.name)}</div>
+          <button class="folder-item ${cur==="all"?"active":""}" data-folder="all">
+            <span class="fico">🗂️</span> Semua Portofolio
+          </button>
+          ${SECTIONS.map(s=>`
+            <button class="folder-item ${cur===s.id?"active":""}" data-folder="${s.id}">
+              <span class="num">${s.num}</span><span class="fico">${s.icon}</span> ${esc(s.title)}
+            </button>`).join("")}
+        </aside>
+
+        <main class="content" id="content">
+          ${sections.map(s=>sectionData(st, s.id)).join("")}
+        </main>
+      </div>
+
+      <div class="foot">Portofolio digital MI AZ-ZAHRO · dikelola oleh guru kelas</div>
+    </div>`;
+
+  document.getElementById("backBtn").addEventListener("click", ()=>{ location.hash = ""; });
+  document.getElementById("editBtn").addEventListener("click", toggleEdit);
+  document.getElementById("shareBtn").addEventListener("click", ()=> copyLink("#/s/" + st.id, "Link " + st.name));
+  const dsb = document.getElementById("delStudentBtn");
+  if(dsb) dsb.addEventListener("click", ()=>{
+    confirmDialog(`Hapus siswa <b>${esc(st.name)}</b> beserta seluruh portofolionya?`, ()=>{
+      students = students.filter(s => s.id !== st.id);
+      for(const k in uploads) delete uploads[k];
+      saveAll();
+      location.hash = "";
+      renderHome();
+      toast("Siswa dihapus");
+    }, "Ya, hapus siswa");
+  });
+  app.querySelectorAll(".folder-item").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const f = b.dataset.folder;
+      location.hash = f === "all" ? "#/s/"+st.id : "#/s/"+st.id+"/"+f;
+    });
+  });
+  hydrateUploads(app);
+}
+
+/* ============================================================
+   Router
+   ============================================================ */
+function route(){
+  const h = decodeURIComponent(location.hash || "");
+  let m = h.match(/^#\/s\/([^\/]+)(?:\/([^\/]+))?$/);
+  if(m){
+    const st = students.find(s => s.id === m[1]);
+    if(st){ renderPortfolio(st, m[2] || "all"); window.scrollTo(0,0); return; }
+  }
+  m = h.match(/^#\/kelas\/(.+)$/);
+  if(m){ renderClassView(m[1]); window.scrollTo(0,0); return; }
+  renderHome();
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange", route);
+
+/* ============================================================
+   Delegasi event
+   ============================================================ */
+app.addEventListener("click", (e)=>{
+  const ub = e.target.closest(".u-btn");
+  if(ub){ const inp = ub.parentElement.querySelector(".up-input"); if(inp) inp.click(); return; }
+
+  if(e.target.closest(".photo-click")){ photoInput.click(); return; }
+
+  const de = e.target.closest("[data-del-ekskul]");
+  if(de){ viewState.st.ekskul.splice(+de.dataset.delEkskul,1); saveAll(); rerender(); return; }
+
+  const dp = e.target.closest("[data-del-prestasi]");
+  if(dp){ viewState.st.prestasi.splice(+dp.dataset.delPrestasi,1); saveAll(); rerender(); return; }
+
+  const dn = e.target.closest("[data-del-nilai]");
+  if(dn){ viewState.st.nilai.splice(+dn.dataset.delNilai,1); saveAll(); rerender(); return; }
+
+  const add = e.target.closest("[data-add]");
+  if(add){
+    const t = add.dataset.add;
+    if(t === "ekskul") viewState.st.ekskul.push(["",""]);
+    else if(t === "prestasi") viewState.st.prestasi.push(["","",""]);
+    else if(t === "nilai") viewState.st.nilai.push(["",""]);
+    saveAll(); rerender(); return;
+  }
+});
+
+app.addEventListener("input", (e)=>{
+  const el = e.target;
+  if(!viewState.st || !el.dataset) return;
+  if(el.dataset.field){
+    viewState.st[el.dataset.field] = el.value;
+    if(el.dataset.field === "kelas"){
+      const k = el.value.trim();
+      if(k && !classes.includes(k)){ classes.push(k); classes.sort(); }
+    }
+    saveAll(); updateHeader();
+  }else if(el.dataset.kind){
+    const arr = viewState.st[el.dataset.kind];
+    if(arr && arr[+el.dataset.idx]){ arr[+el.dataset.idx][+el.dataset.k] = el.value; saveAll(); }
+  }
+});
+
+app.addEventListener("change", (e)=>{
+  if(e.target.classList && e.target.classList.contains("up-input")) handleUploadInput(e.target);
+});
+
+/* ---------- start ---------- */
+loadAll();
+route();
+if(!storageOK){
+  setTimeout(()=>toast("Catatan: penyimpanan browser diblokir — data tidak tersimpan otomatis. Sebaiknya buka file dengan Chrome/Edge."), 900);
+}
+</script>
+</body>
+</html>
