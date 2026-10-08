@@ -282,7 +282,7 @@ tr:last-child td{border-bottom:none}
 const SECTIONS = [
   {id:"diri",    num:"01", title:"Data Diri",                 icon:"👤"},
   {id:"belajar", num:"02", title:"Hasil Belajar",             icon:"📊"},
-  {id:"ekskul",  num:"03", title:"Kegiatan Ekstrakurikuler",  icon:"⚽"},
+  {id:"ekskul",  num:"03", title:"Kegiatan Kokurikuler",      icon:"⚽"},
   {id:"prestasi",num:"04", title:"Prestasi",                  icon:"🏆"},
   {id:"karya",   num:"05", title:"Karya & Projek",            icon:"📁"},
   {id:"foto",    num:"06", title:"Foto / Dokumentasi",        icon:"📷"}
@@ -596,18 +596,28 @@ async function doShare(sel, meta){
 }
 
 async function shortenUrl(longUrl){
-  const services = [
-    u => "https://clck.ru/--?url=" + encodeURIComponent(u),
-    u => "https://da.gd/shorten?url=" + encodeURIComponent(u)
-  ];
-  for(const make of services){
-    try{
-      const res = await fetch(make(longUrl), { method:"GET" });
-      if(!res.ok) continue;
+  // 1) spoo.me — dialihkan langsung tanpa halaman perantara
+  try{
+    const res = await fetch("https://spoo.me/", {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+      body: new URLSearchParams({ url: longUrl })
+    });
+    if(res.ok){
+      const j = await res.json();
+      let s = String((j && (j.short_url || j.shortUrl)) || "");
+      s = s.replace(/^http:\/\//i, "https://");
+      if(/^https?:\/\/\S+$/.test(s) && s.length < longUrl.length) return s;
+    }
+  }catch(e){}
+  // 2) cadangan: clck.ru — juga tanpa halaman perantara
+  try{
+    const res = await fetch("https://clck.ru/--?url=" + encodeURIComponent(longUrl));
+    if(res.ok){
       const t = (await res.text()).trim();
       if(/^https?:\/\/\S+$/.test(t) && t.length < longUrl.length) return t;
-    }catch(e){}
-  }
+    }
+  }catch(e){}
   return null;
 }
 
@@ -1210,14 +1220,14 @@ function ekskulSection(st){
              <input class="inp" data-kind="ekskul" data-idx="${i}" data-k="1" value="${esc(e[1])}" placeholder="Jadwal / pembina">
              <button class="del-btn" type="button" data-del-ekskul="${i}" title="Hapus">✕</button>
            </div>`).join("")}
-       </div>` : `<div class="up-empty">Belum ada ekstrakurikuler.</div>`}
-       <button class="btn add-btn" type="button" data-add="ekskul">＋ Tambah ekstrakurikuler</button>`
+       </div>` : `<div class="up-empty">Belum ada kokurikuler.</div>`}
+       <button class="btn add-btn" type="button" data-add="ekskul">＋ Tambah kokurikuler</button>`
     : (st.ekskul.length
         ? `<div class="chips">${st.ekskul.map(e=>`<span class="chip">${esc(e[0])}<small>${esc(e[1])}</small></span>`).join("")}</div>`
-        : `<div class="up-empty">Belum ada data ekstrakurikuler.</div>`);
+        : `<div class="up-empty">Belum ada data kokurikuler.</div>`);
   return `
     <div class="card">
-      <div class="card-h"><span class="fico">⚽</span> 03. Kegiatan Ekstrakurikuler</div>
+      <div class="card-h"><span class="fico">⚽</span> 03. Kegiatan Kokurikuler</div>
       <div class="card-b">${body}${uploadBlock(st, "ekskul")}</div>
     </div>`;
 }
@@ -1293,7 +1303,7 @@ function renderPortfolio(st, folder){
       </div>
 
       ${readOnly ? `<div class="edit-note" style="background:#eefbf3;border-color:#bfe9cd;color:#0b3d2e">👁️ <span><b>Mode lihat.</b> Anda dapat melihat dan mengunduh berkas. Data hanya dapat diubah oleh guru kelas.</span></div>` : ""}
-      ${(editMode && !readOnly) ? `<div class="edit-note">✏️ <span><b>Mode edit aktif.</b> Ketik langsung pada Data Diri, Hasil Belajar, Prestasi, dan Ekstrakurikuler. Klik foto profil untuk mengunggah foto. Klik <b>Simpan &amp; Selesai</b> bila sudah.</span></div>` : ""}
+      ${(editMode && !readOnly) ? `<div class="edit-note">✏️ <span><b>Mode edit aktif.</b> Ketik langsung pada Data Diri, Hasil Belajar, Prestasi, dan Kokurikuler. Klik foto profil untuk mengunggah foto. Klik <b>Simpan &amp; Selesai</b> bila sudah.</span></div>` : ""}
 
       <div class="pf-head">
         ${avatar(st, (editMode && !readOnly) ? "photo-click" : "")}
