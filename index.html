@@ -508,14 +508,16 @@ function openClassManager(){
 /* ============================================================
    BAGIKAN LINK — data ikut di dalam link (mode lihat)
    ============================================================ */
-function openShareLinks(){
+function openShareLinks(preset){
+  const isPreset = !!(preset && typeof preset === "object" && preset.mode);
   openModal(`
     <div class="modal-head"><b>🔗 Bagikan Link</b><button class="modal-close" id="shX">✕</button></div>
     <div class="modal-body">
-      <div style="font-size:12.5px;color:var(--muted)">Link membawa data siswa (nama, nilai, ekskul, prestasi, dll.) sehingga bisa dibuka di HP mana pun. Wali murid <b>hanya bisa melihat &amp; mengunduh</b>, tidak bisa mengubah.</div>
+      <div style="font-size:12.5px;color:var(--muted)">Link membawa data siswa sehingga bisa dibuka di HP mana pun. Wali murid <b>hanya bisa melihat &amp; mengunduh</b>, tidak bisa mengubah.</div>
       <label style="display:flex;align-items:center;gap:9px;font-weight:600;color:var(--text)">
-        <input type="checkbox" id="shPhoto" checked> Sertakan foto profil (link jadi lebih panjang)
+        <input type="checkbox" id="shPhoto"> Sertakan foto profil (membuat link lebih panjang)
       </label>
+      ${isPreset ? "" : `
       <div class="class-row">
         <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">Semua Siswa</span>
         <span class="class-count">${students.length} siswa</span>
@@ -528,38 +530,85 @@ function openShareLinks(){
             <span class="class-count">${classCount(c)} siswa</span>
             <button class="btn" data-share-mode="kelas" data-kelas="${esc(c)}">Buat Link</button>
           </div>`).join("") || `<div class="up-empty">Belum ada kelas. Tambahkan dulu di “Kelola Kelas”.</div>`}
-      </div>
+      </div>`}
       <div id="shResult"></div>
     </div>`, 620);
 
   modalRoot.querySelector("#shX").onclick = closeModal;
   modalRoot.querySelectorAll("[data-share-mode]").forEach(b=>{
-    b.onclick = ()=> generateShare(b.dataset.shareMode, b.dataset.kelas);
+    b.onclick = ()=> doShare(
+      b.dataset.shareMode === "all" ? students.slice() : students.filter(s=>s.kelas===b.dataset.kelas),
+      { mode: b.dataset.shareMode, kelas: b.dataset.kelas || "all" }
+    );
   });
+
+  if(isPreset){
+    if(preset.mode === "siswa"){
+      const st = students.find(s=>s.id===preset.studentId);
+      if(st) doShare([st], { mode:"siswa", kelas: st.kelas || "" });
+    }else{
+      doShare(
+        preset.mode === "all" ? students.slice() : students.filter(s=>s.kelas===preset.kelas),
+        { mode: preset.mode, kelas: preset.kelas || "all" }
+      );
+    }
+  }
 }
 
-async function generateShare(mode, kelas){
+async function doShare(sel, meta){
   const box = modalRoot.querySelector("#shResult");
   if(!box) return;
+  if(!sel.length){ box.innerHTML = `<div class="up-empty">Belum ada siswa untuk dibagikan.</div>`; return; }
   box.innerHTML = `<div class="up-empty">⏳ Membuat link…</div>`;
   const includePhoto = !!modalRoot.querySelector("#shPhoto").checked;
-  const { payload, skippedUploads } = await buildSharePayload(mode, kelas, includePhoto);
+  const { payload, skippedUploads } = await buildSharePayload(sel, meta, includePhoto);
   const packed = await packShare(payload);
-  const url = shareURL("#w=" + packed);
-  const tooLong = url.length > 50000;
+  const longUrl = shareURL("#w=" + packed);
   box.innerHTML = `
     <div style="margin-top:8px;font-size:12.5px;color:var(--muted)">
-      Link siap (${url.length.toLocaleString()} karakter).
-      ${tooLong ? "<br><b style='color:#b91c1c'>Link cukup panjang — sebaiknya matikan opsi foto atau bagikan per kelas.</b>" : ""}
-      ${skippedUploads ? "<br>Berkas unggahan tidak disertakan karena terlalu besar." : ""}
+      Link siap (${longUrl.length.toLocaleString()} karakter).${skippedUploads ? "<br>Berkas unggahan tidak disertakan karena terlalu besar." : ""}
     </div>
-    <input class="inp" id="shUrl" readonly value="${esc(url)}">
-    <div class="modal-actions"><div style="flex:1"></div><button class="btn primary" id="shCopy">🔗 Salin Link</button></div>`;
+    <input class="inp" id="shUrl" readonly value="${esc(longUrl)}">
+    <div class="modal-actions">
+      <button class="btn" id="shShort">✂️ Perpendek Link</button>
+      <div style="flex:1"></div>
+      <button class="btn primary" id="shCopy">🔗 Salin Link</button>
+    </div>
+    <div id="shShortBox"></div>`;
   const inp = modalRoot.querySelector("#shUrl");
   modalRoot.querySelector("#shCopy").onclick = async ()=>{
-    try{ await navigator.clipboard.writeText(url); toast("Link disalin ✓"); }
+    try{ await navigator.clipboard.writeText(inp.value); toast("Link disalin ✓"); }
     catch(e){ inp.focus(); inp.select(); toast("Tekan & tahan pada kotak untuk menyalin"); }
   };
+  modalRoot.querySelector("#shShort").onclick = async ()=>{
+    const sb = modalRoot.querySelector("#shShortBox");
+    if(!/^https?:$/.test(location.protocol)){
+      sb.innerHTML = `<div class="up-empty">Perpendek link hanya bisa dipakai setelah situs online (mis. GitHub Pages). Link panjang di atas tetap bisa dipakai.</div>`;
+      return;
+    }
+    sb.innerHTML = `<div class="up-empty">⏳ Memperpendek link…</div>`;
+    const short = await shortenUrl(longUrl);
+    if(!short){ sb.innerHTML = `<div class="up-empty">Gagal memperpendek (perlu koneksi internet). Link panjang di atas tetap bisa dipakai.</div>`; return; }
+    inp.value = short;
+    sb.innerHTML = `<div style="font-size:12.5px;color:#0b3d2e">✓ Link pendek siap — klik “Salin Link”.</div>`;
+    toast("Link diperpendek ✓");
+  };
+}
+
+async function shortenUrl(longUrl){
+  const services = [
+    u => "https://clck.ru/--?url=" + encodeURIComponent(u),
+    u => "https://da.gd/shorten?url=" + encodeURIComponent(u)
+  ];
+  for(const make of services){
+    try{
+      const res = await fetch(make(longUrl), { method:"GET" });
+      if(!res.ok) continue;
+      const t = (await res.text()).trim();
+      if(/^https?:\/\/\S+$/.test(t) && t.length < longUrl.length) return t;
+    }catch(e){}
+  }
+  return null;
 }
 
 function shrinkDataUrl(src, maxDim, q){
@@ -578,21 +627,58 @@ function shrinkDataUrl(src, maxDim, q){
     img.src = src;
   });
 }
-async function buildSharePayload(mode, kelas, includePhoto){
-  const sel = mode === "all" ? students.slice() : students.filter(s => s.kelas === kelas);
-  const outStudents = [];
-  for(const s of sel){
-    const c = JSON.parse(JSON.stringify(s));
-    c.photo = (includePhoto && s.photo) ? await shrinkDataUrl(s.photo, 180, 0.6) : "";
-    outStudents.push(c);
-  }
+
+/* data ringkas: kunci pendek + buang kolom kosong supaya link lebih pendek */
+function compactStudent(s, hasUp){
+  const o = {};
+  if(hasUp) o.d = s.id;
+  if(s.name) o.n = s.name;
+  if(s.kelas) o.k = s.kelas;
+  if(s.nis) o.i = s.nis;
+  if(s.ttl) o.t = s.ttl;
+  if(s.alamat) o.a = s.alamat;
+  if(s.sekolah && s.sekolah !== "MI AZ-ZAHRO") o.s = s.sekolah;
+  if(s.photo) o.p = s.photo;
+  const v = (s.nilai||[]).filter(r => r && (r[0] || r[1]));
+  const e = (s.ekskul||[]).filter(r => r && (r[0] || r[1]));
+  const r = (s.prestasi||[]).filter(x => x && (x[0] || x[1] || x[2]));
+  if(v.length) o.v = v;
+  if(e.length) o.e = e;
+  if(r.length) o.r = r;
+  return o;
+}
+function expandStudents(arr){
+  return (arr||[]).map((o, idx)=>({
+    id: o.d || ("s" + idx),
+    name: o.n || "",
+    kelas: o.k || "",
+    nis: o.i || "",
+    ttl: o.t || "",
+    alamat: o.a || "",
+    sekolah: o.s || "MI AZ-ZAHRO",
+    photo: o.p || "",
+    nilai: o.v || [],
+    ekskul: o.e || [],
+    prestasi: o.r || [],
+    karya: [],
+    foto: []
+  }));
+}
+async function buildSharePayload(sel, meta, includePhoto){
   let totalUp = 0;
   sel.forEach(s=>{ const u = uploads[s.id]; if(u) for(const f in u) (u[f]||[]).forEach(x=> totalUp += (x.dataUrl||"").length); });
-  const outUploads = {};
   const skippedUploads = totalUp > 300000;
-  if(!skippedUploads) sel.forEach(s=>{ if(uploads[s.id]) outUploads[s.id] = uploads[s.id]; });
+  const outStudents = [];
+  const outUploads = {};
+  for(const s of sel){
+    const hasUp = !skippedUploads && uploads[s.id] && Object.keys(uploads[s.id]).length > 0;
+    if(hasUp) outUploads[s.id] = uploads[s.id];
+    const src = Object.assign({}, s);
+    src.photo = (includePhoto && s.photo) ? await shrinkDataUrl(s.photo, 160, 0.55) : "";
+    outStudents.push(compactStudent(src, hasUp));
+  }
   return {
-    payload: { v:1, mode, kelas: mode === "all" ? "all" : kelas, classes: classes.slice(), students: outStudents, uploads: outUploads },
+    payload: { v:2, m: meta.mode, k: meta.mode === "all" ? "all" : (meta.kelas || "all"), s: outStudents, u: outUploads },
     skippedUploads
   };
 }
@@ -920,7 +1006,7 @@ function renderHome(){
 
   document.getElementById("addStudentBtn").onclick = ()=> openStudentForm();
   document.getElementById("manageClassBtn").onclick = openClassManager;
-  document.getElementById("shareLinksBtn").onclick = openShareLinks;
+  document.getElementById("shareLinksBtn").onclick = ()=> openShareLinks();
   document.getElementById("exportBtn").onclick = exportData;
   document.getElementById("importBtn").onclick = ()=> document.getElementById("importFile").click();
   document.getElementById("importFile").addEventListener("change", (e)=>{
@@ -1017,10 +1103,7 @@ function renderClassView(cls){
   const bb = document.getElementById("backBtn");
   if(bb) bb.onclick = ()=>{ location.hash = ""; };
   const cvs = document.getElementById("cvShare");
-  if(cvs) cvs.onclick = ()=> copyLink(
-    "#/kelas/" + (isAll ? "all" : encodeURIComponent(cls)),
-    isAll ? "Link semua siswa" : ("Link " + title)
-  );
+  if(cvs) cvs.onclick = ()=> openShareLinks({ mode: isAll ? "all" : "kelas", kelas: isAll ? "all" : cls });
 
   function paint(){
     const term = q.value.trim().toLowerCase();
@@ -1244,7 +1327,7 @@ function renderPortfolio(st, folder){
   const editBtnEl = document.getElementById("editBtn");
   if(editBtnEl) editBtnEl.addEventListener("click", toggleEdit);
   const shareBtnEl = document.getElementById("shareBtn");
-  if(shareBtnEl) shareBtnEl.addEventListener("click", ()=> copyLink("#/s/" + st.id, "Link " + st.name));
+  if(shareBtnEl) shareBtnEl.addEventListener("click", ()=> openShareLinks({ mode:"siswa", studentId: st.id }));
   const dsb = document.getElementById("delStudentBtn");
   if(dsb) dsb.addEventListener("click", ()=>{
     confirmDialog(`Hapus siswa <b>${esc(st.name)}</b> beserta seluruh portofolionya?`, ()=>{
@@ -1289,18 +1372,19 @@ async function route(){
     try{
       const p = await unpackShare(h.slice(3));
       shareState = {
-        classes: Array.isArray(p.classes) ? p.classes.slice() : [],
-        students: (p.students || []).map(ensureStudentShape),
-        uploads: p.uploads || {},
-        mode: p.mode || "all",
-        kelas: p.kelas || "all"
+        classes: [],
+        students: p.s ? expandStudents(p.s).map(ensureStudentShape) : (p.students || []).map(ensureStudentShape),
+        uploads: p.u || p.uploads || {},
+        mode: p.m || p.mode || "all",
+        kelas: p.k || p.kelas || "all"
       };
       readOnly = true;
       students = shareState.students;
       classes = shareState.classes;
       for(const k in uploads) delete uploads[k];
       Object.assign(uploads, shareState.uploads);
-      renderClassView(shareState.kelas);
+      if(shareState.mode === "siswa" && shareState.students.length) renderPortfolio(shareState.students[0], "all");
+      else renderClassView(shareState.kelas);
     }catch(e){
       exitShare();
       toast("Link tidak valid atau rusak.");
