@@ -517,6 +517,10 @@ function openShareLinks(preset){
       <label style="display:flex;align-items:center;gap:9px;font-weight:600;color:var(--text)">
         <input type="checkbox" id="shPhoto"> Sertakan foto profil (membuat link lebih panjang)
       </label>
+      <label style="display:flex;align-items:center;gap:9px;font-weight:600;color:var(--text)">
+        <input type="checkbox" id="shOnline"> Unggah berkas ke server agar berkas ikut terbuka lewat link
+      </label>
+      <div style="font-size:11.5px;color:var(--muted)">Berkas akan diunggah ke penyimpanan online (gofile.io) supaya bisa dibuka wali murid. Tanpa opsi ini, berkas hanya ikut bila ukurannya kecil.</div>
       ${isPreset ? "" : `
       <div class="class-row">
         <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">Semua Siswa</span>
@@ -561,12 +565,20 @@ async function doShare(sel, meta){
   if(!sel.length){ box.innerHTML = `<div class="up-empty">Belum ada siswa untuk dibagikan.</div>`; return; }
   box.innerHTML = `<div class="up-empty">⏳ Membuat link…</div>`;
   const includePhoto = !!modalRoot.querySelector("#shPhoto").checked;
-  const { payload, skippedUploads } = await buildSharePayload(sel, meta, includePhoto);
-  const packed = await packShare(payload);
+  const onlineEl = modalRoot.querySelector("#shOnline");
+  const online = !!(onlineEl && onlineEl.checked);
+  const info = await buildSharePayload(sel, meta, includePhoto, online, (name)=>{
+    box.innerHTML = `<div class="up-empty">⏳ Mengunggah berkas: ${esc(name)}…</div>`;
+  });
+  const packed = await packShare(info.payload);
   const longUrl = shareURL("#w=" + packed);
+  const notes = [];
+  if(info.uploadedCount) notes.push(info.uploadedCount + " berkas diunggah ke server dan bisa dibuka lewat link.");
+  if(info.failedCount) notes.push(info.failedCount + " berkas gagal diunggah ke server (disertakan bila ukurannya kecil).");
+  if(info.skippedUploads) notes.push("Berkas tidak disertakan karena terlalu besar untuk link. Centang “Unggah berkas ke server” agar berkas ikut terbuka.");
   box.innerHTML = `
     <div style="margin-top:8px;font-size:12.5px;color:var(--muted)">
-      Link siap (${longUrl.length.toLocaleString()} karakter).${skippedUploads ? "<br>Berkas unggahan tidak disertakan karena terlalu besar." : ""}
+      Link siap (${longUrl.length.toLocaleString()} karakter).${notes.length ? "<br>" + notes.join("<br>") : ""}
     </div>
     <input class="inp" id="shUrl" readonly value="${esc(longUrl)}">
     <div class="modal-actions">
@@ -674,22 +686,50 @@ function expandStudents(arr){
     foto: []
   }));
 }
-async function buildSharePayload(sel, meta, includePhoto){
-  let totalUp = 0;
-  sel.forEach(s=>{ const u = uploads[s.id]; if(u) for(const f in u) (u[f]||[]).forEach(x=> totalUp += (x.dataUrl||"").length); });
-  const skippedUploads = totalUp > 300000;
+async function buildSharePayload(sel, meta, includePhoto, online, onProgress){
+  // hitung total berkas
+  let totalBytes = 0, fileCount = 0;
+  sel.forEach(s=>{ const u = uploads[s.id]; if(u) for(const f in u) (u[f]||[]).forEach(x=>{ totalBytes += (x.size||0); fileCount++; }); });
+  // tanpa opsi online, berkas hanya bisa disertakan bila totalnya kecil (batas aman panjang link)
+  const skipEmbed = !online && totalBytes > 60000;
+
   const outStudents = [];
   const outUploads = {};
+  let uploadedCount = 0, failedCount = 0;
+
   for(const s of sel){
-    const hasUp = !skippedUploads && uploads[s.id] && Object.keys(uploads[s.id]).length > 0;
-    if(hasUp) outUploads[s.id] = uploads[s.id];
+    const u = uploads[s.id];
+    if(!skipEmbed && u && Object.keys(u).length){
+      const out = {};
+      for(const folder in u){
+        const arr = u[folder] || [];
+        const converted = [];
+        for(const item of arr){
+          if(online && item.dataUrl){
+            if(onProgress) onProgress(item.name);
+            try{
+              const url = await uploadToHost(item);
+              converted.push({ name:item.name, type:item.type, size:item.size, url });
+              uploadedCount++;
+            }catch(e){
+              converted.push({ name:item.name, type:item.type, size:item.size, dataUrl:item.dataUrl });
+              failedCount++;
+            }
+          }else{
+            converted.push({ name:item.name, type:item.type, size:item.size, dataUrl:item.dataUrl });
+          }
+        }
+        if(converted.length) out[folder] = converted;
+      }
+      if(Object.keys(out).length) outUploads[s.id] = out;
+    }
     const src = Object.assign({}, s);
     src.photo = (includePhoto && s.photo) ? await shrinkDataUrl(s.photo, 160, 0.55) : "";
-    outStudents.push(compactStudent(src, hasUp));
+    outStudents.push(compactStudent(src, !!outUploads[s.id]));
   }
   return {
     payload: { v:2, m: meta.mode, k: meta.mode === "all" ? "all" : (meta.kelas || "all"), s: outStudents, u: outUploads },
-    skippedUploads
+    skippedUploads: skipEmbed, uploadedCount, failedCount, fileCount, totalBytes
   };
 }
 
@@ -798,6 +838,7 @@ function openStudentForm(id){
       confirmDialog(`Hapus siswa <b>${esc(st.name)}</b> beserta seluruh portofolionya?`, ()=>{
         students = students.filter(s => s.id !== st.id);
         for(const k in uploads) delete uploads[k];
+        saveUploads();
         saveAll();
         location.hash = "";
         renderHome();
@@ -842,7 +883,40 @@ function importData(file){
    UNGGAH FILE per folder (selama sesi)
    ============================================================ */
 const uploads = {};
+const UP_KEY = "mi-azzahro-uploads-v1";
 const ACCEPT = ".jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.zip";
+
+function saveUploads(){
+  if(readOnly) return;
+  try{ localStorage.setItem(UP_KEY, JSON.stringify(uploads)); }
+  catch(e){ toast("Penyimpanan browser penuh — berkas besar tidak tersimpan permanen."); }
+}
+function loadUploads(){
+  try{
+    const raw = localStorage.getItem(UP_KEY);
+    if(raw){ const d = JSON.parse(raw); if(d && typeof d === "object") Object.assign(uploads, d); }
+  }catch(e){}
+}
+function dataUrlToBlob(dataUrl){
+  const parts = String(dataUrl).split(",");
+  const mime = (parts[0].match(/data:([^;]+)/) || [])[1] || "application/octet-stream";
+  const bin = atob(parts[1] || "");
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+async function uploadToHost(item){
+  const s = await (await fetch("https://api.gofile.io/servers")).json();
+  const list = (s && s.data && s.data.servers) || [];
+  const server = (list[0] && list[0].name) || "store1";
+  const fd = new FormData();
+  fd.append("file", dataUrlToBlob(item.dataUrl), item.name || "berkas");
+  const res = await fetch("https://" + server + ".gofile.io/contents/uploadfile", { method:"POST", body: fd });
+  const j = await res.json();
+  const url = j && j.data && j.data.downloadPage;
+  if(!url) throw new Error("gagal unggah");
+  return url;
+}
 
 function fmtSize(b){
   if(b < 1024) return b + " B";
@@ -880,14 +954,16 @@ function renderUploadTiles(container, stId, folder){
   if(!list.length){ container.innerHTML = `<div class="up-empty">Belum ada file diunggah di folder ini.</div>`; return; }
   container.innerHTML = list.map((f,i)=>{
     const isImg = (f.type||"").startsWith("image/");
+    const href = f.url || f.dataUrl;
+    const thumb = (isImg && f.dataUrl)
+      ? `<div class="thumb" style="background-image:url('${f.dataUrl}');background-size:cover;background-position:center"></div>`
+      : `<span class="fico">${fileIcon(f)}</span>`;
     return `
       <div class="tile up-tile">
         ${readOnly ? "" : `<button class="rm-btn" type="button" data-idx="${i}" title="Hapus file">✕</button>`}
-        <a class="tile-link" href="${f.dataUrl}" download="${esc(f.name)}" target="_blank" rel="noopener">
-          ${isImg
-            ? `<div class="thumb" style="background-image:url('${f.dataUrl}');background-size:cover;background-position:center"></div>`
-            : `<span class="fico">${fileIcon(f)}</span>`}
-          <b>${esc(f.name)}</b><span>${fmtSize(f.size)} · klik buka</span>
+        <a class="tile-link" href="${esc(href)}" download="${esc(f.name)}" target="_blank" rel="noopener">
+          ${thumb}
+          <b>${esc(f.name)}</b><span>${fmtSize(f.size)} · ${f.url ? "buka berkas" : "klik buka"}</span>
         </a>
       </div>`;
   }).join("");
@@ -896,6 +972,7 @@ function renderUploadTiles(container, stId, folder){
       e.preventDefault(); e.stopPropagation();
       list.splice(+b.dataset.idx, 1);
       renderUploadTiles(container, stId, folder);
+      saveUploads();
     });
   });
 }
@@ -915,6 +992,7 @@ function handleUploadInput(input){
       uploads[stId][folder] = uploads[stId][folder] || [];
       uploads[stId][folder].push({name:file.name, type:file.type, size:file.size, dataUrl:reader.result});
       renderUploadTiles(tiles, stId, folder);
+      saveUploads();
       toast("File ditambahkan: " + file.name);
     };
     reader.readAsDataURL(file);
@@ -1343,6 +1421,7 @@ function renderPortfolio(st, folder){
     confirmDialog(`Hapus siswa <b>${esc(st.name)}</b> beserta seluruh portofolionya?`, ()=>{
       students = students.filter(s => s.id !== st.id);
       for(const k in uploads) delete uploads[k];
+      saveUploads();
       saveAll();
       location.hash = "";
       renderHome();
@@ -1482,6 +1561,7 @@ app.addEventListener("change", (e)=>{
 
 /* ---------- start ---------- */
 loadAll();
+loadUploads();
 route();
 if(!storageOK){
   setTimeout(()=>toast("Catatan: penyimpanan browser diblokir — data tidak tersimpan otomatis. Sebaiknya buka file dengan Chrome/Edge."), 900);
