@@ -300,9 +300,13 @@ let classes  = [];   // daftar kelas, mis. ["5A","5B"]
 let editMode = false;
 let homeFilter = "all";
 let viewState = { st:null, folder:"all" };
+let readOnly = false;        // mode wali murid: hanya lihat & unduh
+let shareState = null;       // data dari link berbagi (#w=...)
+let localSnapshot = null;    // cadangan data walas saat beralih ke mode lihat
 
 let storageOK = true;
 function saveAll(){
+  if(readOnly) return;  // mode lihat tidak boleh mengubah data
   try{ localStorage.setItem(LS_KEY, JSON.stringify({ students, classes })); }
   catch(e){ storageOK = false; }
 }
@@ -502,35 +506,131 @@ function openClassManager(){
 }
 
 /* ============================================================
-   BAGIKAN LINK (semua siswa & per kelas)
+   BAGIKAN LINK — data ikut di dalam link (mode lihat)
    ============================================================ */
 function openShareLinks(){
-  const rows = classes.map(c=>`
-    <div class="class-row">
-      <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">${esc(c)}</span>
-      <span class="class-count">${classCount(c)} siswa</span>
-      <button class="btn" data-share-class="${esc(c)}">🔗 Salin</button>
-    </div>`).join("") || `<div class="up-empty">Belum ada kelas. Tambahkan dulu di “Kelola Kelas”.</div>`;
-
   openModal(`
     <div class="modal-head"><b>🔗 Bagikan Link</b><button class="modal-close" id="shX">✕</button></div>
     <div class="modal-body">
-      <div style="font-size:12.5px;color:var(--muted)">Satu link berisi seluruh siswa. Wali murid tinggal mencari nama anaknya.</div>
+      <div style="font-size:12.5px;color:var(--muted)">Link membawa data siswa (nama, nilai, ekskul, prestasi, dll.) sehingga bisa dibuka di HP mana pun. Wali murid <b>hanya bisa melihat &amp; mengunduh</b>, tidak bisa mengubah.</div>
+      <label style="display:flex;align-items:center;gap:9px;font-weight:600;color:var(--text)">
+        <input type="checkbox" id="shPhoto" checked> Sertakan foto profil (link jadi lebih panjang)
+      </label>
       <div class="class-row">
         <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">Semua Siswa</span>
         <span class="class-count">${students.length} siswa</span>
-        <button class="btn primary" data-share-all="1">🔗 Salin</button>
+        <button class="btn primary" data-share-mode="all">Buat Link</button>
       </div>
-      <div class="edit-list">${rows}</div>
-      <div style="font-size:12px;color:var(--muted)">Link per siswa: buka portofolio siswa lalu klik “🔗 Link siswa”.</div>
-    </div>`, 560);
+      <div class="edit-list">
+        ${classes.map(c=>`
+          <div class="class-row">
+            <span class="inp" style="border-style:dashed;color:var(--blue-800);font-weight:600">${esc(c)}</span>
+            <span class="class-count">${classCount(c)} siswa</span>
+            <button class="btn" data-share-mode="kelas" data-kelas="${esc(c)}">Buat Link</button>
+          </div>`).join("") || `<div class="up-empty">Belum ada kelas. Tambahkan dulu di “Kelola Kelas”.</div>`}
+      </div>
+      <div id="shResult"></div>
+    </div>`, 620);
 
   modalRoot.querySelector("#shX").onclick = closeModal;
-  const allBtn = modalRoot.querySelector("[data-share-all]");
-  if(allBtn) allBtn.onclick = ()=> copyLink("#/kelas/all", "Link semua siswa");
-  modalRoot.querySelectorAll("[data-share-class]").forEach(b=>{
-    b.onclick = ()=> copyLink("#/kelas/" + encodeURIComponent(b.dataset.shareClass), "Link kelas " + b.dataset.shareClass);
+  modalRoot.querySelectorAll("[data-share-mode]").forEach(b=>{
+    b.onclick = ()=> generateShare(b.dataset.shareMode, b.dataset.kelas);
   });
+}
+
+async function generateShare(mode, kelas){
+  const box = modalRoot.querySelector("#shResult");
+  if(!box) return;
+  box.innerHTML = `<div class="up-empty">⏳ Membuat link…</div>`;
+  const includePhoto = !!modalRoot.querySelector("#shPhoto").checked;
+  const { payload, skippedUploads } = await buildSharePayload(mode, kelas, includePhoto);
+  const packed = await packShare(payload);
+  const url = shareURL("#w=" + packed);
+  const tooLong = url.length > 50000;
+  box.innerHTML = `
+    <div style="margin-top:8px;font-size:12.5px;color:var(--muted)">
+      Link siap (${url.length.toLocaleString()} karakter).
+      ${tooLong ? "<br><b style='color:#b91c1c'>Link cukup panjang — sebaiknya matikan opsi foto atau bagikan per kelas.</b>" : ""}
+      ${skippedUploads ? "<br>Berkas unggahan tidak disertakan karena terlalu besar." : ""}
+    </div>
+    <input class="inp" id="shUrl" readonly value="${esc(url)}">
+    <div class="modal-actions"><div style="flex:1"></div><button class="btn primary" id="shCopy">🔗 Salin Link</button></div>`;
+  const inp = modalRoot.querySelector("#shUrl");
+  modalRoot.querySelector("#shCopy").onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(url); toast("Link disalin ✓"); }
+    catch(e){ inp.focus(); inp.select(); toast("Tekan & tahan pada kotak untuk menyalin"); }
+  };
+}
+
+function shrinkDataUrl(src, maxDim, q){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const sc = Math.min(1, maxDim / Math.max(w, h));
+      w = Math.round(w*sc); h = Math.round(h*sc);
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      try{ resolve(c.toDataURL("image/jpeg", q)); }catch(e){ resolve(src); }
+    };
+    img.onerror = ()=> resolve(src);
+    img.src = src;
+  });
+}
+async function buildSharePayload(mode, kelas, includePhoto){
+  const sel = mode === "all" ? students.slice() : students.filter(s => s.kelas === kelas);
+  const outStudents = [];
+  for(const s of sel){
+    const c = JSON.parse(JSON.stringify(s));
+    c.photo = (includePhoto && s.photo) ? await shrinkDataUrl(s.photo, 180, 0.6) : "";
+    outStudents.push(c);
+  }
+  let totalUp = 0;
+  sel.forEach(s=>{ const u = uploads[s.id]; if(u) for(const f in u) (u[f]||[]).forEach(x=> totalUp += (x.dataUrl||"").length); });
+  const outUploads = {};
+  const skippedUploads = totalUp > 300000;
+  if(!skippedUploads) sel.forEach(s=>{ if(uploads[s.id]) outUploads[s.id] = uploads[s.id]; });
+  return {
+    payload: { v:1, mode, kelas: mode === "all" ? "all" : kelas, classes: classes.slice(), students: outStudents, uploads: outUploads },
+    skippedUploads
+  };
+}
+
+/* --- pengemasan data ke dalam link (base64 + kompresi bila tersedia) --- */
+function bytesToB64url(bytes){
+  let bin = ""; const CH = 0x8000;
+  for(let i=0;i<bytes.length;i+=CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+CH));
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64urlToBytes(str){
+  const b64 = str.replace(/-/g,"+").replace(/_/g,"/");
+  const pad = b64.length % 4 ? "=".repeat(4 - (b64.length % 4)) : "";
+  const bin = atob(b64 + pad);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+async function packShare(obj){
+  const json = JSON.stringify(obj);
+  if(typeof CompressionStream !== "undefined"){
+    try{
+      const cs = new CompressionStream("deflate-raw");
+      const buf = await new Response(new Blob([json]).stream().pipeThrough(cs)).arrayBuffer();
+      return "z" + bytesToB64url(new Uint8Array(buf));
+    }catch(e){}
+  }
+  return "p" + bytesToB64url(new TextEncoder().encode(json));
+}
+async function unpackShare(str){
+  const tag = str.charAt(0), body = str.slice(1);
+  const bytes = b64urlToBytes(body);
+  if(tag === "z"){
+    const ds = new DecompressionStream("deflate-raw");
+    const buf = await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+    return JSON.parse(new TextDecoder().decode(buf));
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 /* ============================================================
@@ -665,13 +765,16 @@ function fileIcon(f){
   return "📎";
 }
 function uploadBlock(st, folder){
+  const list = (uploads[st.id] && uploads[st.id][folder]) || [];
+  // mode lihat: sembunyikan blok bila tidak ada berkas (hanya bisa mengunduh)
+  if(readOnly && !list.length) return "";
   return `
     <div class="upload" data-st="${st.id}" data-folder="${folder}">
       <div class="upload-head">
-        <div class="u-title">📎 Lampiran & Unggahan</div>
-        <div class="u-hint">jpg, png, pdf, doc, xls, ppt, dll.</div>
-        <button class="btn u-btn" type="button">＋ Unggah File</button>
-        <input class="up-input" type="file" accept="${ACCEPT}" multiple hidden />
+        <div class="u-title">📎 ${readOnly ? "Berkas & Lampiran" : "Lampiran & Unggahan"}</div>
+        <div class="u-hint">${readOnly ? "klik berkas untuk mengunduh" : "jpg, png, pdf, doc, xls, ppt, dll."}</div>
+        ${readOnly ? "" : `<button class="btn u-btn" type="button">＋ Unggah File</button>
+        <input class="up-input" type="file" accept="${ACCEPT}" multiple hidden />`}
       </div>
       <div class="tiles up-tiles"></div>
     </div>`;
@@ -683,7 +786,7 @@ function renderUploadTiles(container, stId, folder){
     const isImg = (f.type||"").startsWith("image/");
     return `
       <div class="tile up-tile">
-        <button class="rm-btn" type="button" data-idx="${i}" title="Hapus file">✕</button>
+        ${readOnly ? "" : `<button class="rm-btn" type="button" data-idx="${i}" title="Hapus file">✕</button>`}
         <a class="tile-link" href="${f.dataUrl}" download="${esc(f.name)}" target="_blank" rel="noopener">
           ${isImg
             ? `<div class="thumb" style="background-image:url('${f.dataUrl}');background-size:cover;background-position:center"></div>`
@@ -884,10 +987,10 @@ function renderClassView(cls){
   app.innerHTML = `
     <div class="wrap">
       <div class="crumbbar">
-        <button class="btn" id="backBtn">‹ Beranda</button>
-        <div class="crumbs"><a href="#">Portofolio Siswa</a> <span>›</span> <b>${esc(title)}</b></div>
+        ${readOnly ? "" : `<button class="btn" id="backBtn">‹ Beranda</button>`}
+        <div class="crumbs">${readOnly ? "Portofolio Siswa" : `<a href="#">Portofolio Siswa</a>`} <span>›</span> <b>${esc(title)}</b></div>
         <div style="flex:1"></div>
-        <button class="btn primary" id="cvShare">🔗 Salin link ${isAll ? "semua siswa" : "kelas ini"}</button>
+        ${readOnly ? "" : `<button class="btn primary" id="cvShare">🔗 Salin link ${isAll ? "semua siswa" : "kelas ini"}</button>`}
       </div>
 
       <div class="cv-head">
@@ -905,14 +1008,16 @@ function renderClassView(cls){
       </div>
 
       <div class="list" id="cvList"></div>
-      <div class="foot">Bagikan link ini ke wali murid — mereka tinggal mencari nama anaknya.</div>
+      <div class="foot">${readOnly ? "Pilih nama anak Anda untuk melihat portofolionya." : "Bagikan link ini ke wali murid — mereka tinggal mencari nama anaknya."}</div>
     </div>`;
 
   const q = document.getElementById("cvq");
   const clearBtn = document.getElementById("cvClear");
 
-  document.getElementById("backBtn").onclick = ()=>{ location.hash = ""; };
-  document.getElementById("cvShare").onclick = ()=> copyLink(
+  const bb = document.getElementById("backBtn");
+  if(bb) bb.onclick = ()=>{ location.hash = ""; };
+  const cvs = document.getElementById("cvShare");
+  if(cvs) cvs.onclick = ()=> copyLink(
     "#/kelas/" + (isAll ? "all" : encodeURIComponent(cls)),
     isAll ? "Link semua siswa" : ("Link " + title)
   );
@@ -1088,24 +1193,27 @@ function renderPortfolio(st, folder){
   const cur = folder || "all";
   viewState = { st, folder: cur };
   const sections = cur === "all" ? SECTIONS : SECTIONS.filter(s=>s.id===cur);
+  const backHash = readOnly ? ("#/kelas/" + ((shareState && shareState.kelas) ? shareState.kelas : "all")) : "";
 
   app.innerHTML = `
     <div class="wrap">
       <div class="crumbbar">
-        <button class="btn" id="backBtn">‹ Kembali</button>
+        <button class="btn" id="backBtn">‹ ${readOnly ? "Daftar Siswa" : "Kembali"}</button>
         <div class="crumbs">
-          <a href="#">Portofolio Siswa</a> <span>›</span> <b>${esc(st.name)}</b>
+          ${readOnly ? `<a href="${backHash}">Daftar Siswa</a>` : `<a href="#">Portofolio Siswa</a>`} <span>›</span> <b>${esc(st.name)}</b>
         </div>
         <div style="flex:1"></div>
-        ${editMode ? `<button class="btn danger" id="delStudentBtn">🗑 Hapus</button>` : ""}
-        <button class="btn primary" id="editBtn">${editMode ? "✔ Simpan & Selesai" : "✏️ Edit Data"}</button>
-        <button class="btn" id="shareBtn">🔗 Link siswa</button>
+        ${readOnly ? "" : `
+          ${editMode ? `<button class="btn danger" id="delStudentBtn">🗑 Hapus</button>` : ""}
+          <button class="btn primary" id="editBtn">${editMode ? "✔ Simpan & Selesai" : "✏️ Edit Data"}</button>
+          <button class="btn" id="shareBtn">🔗 Link siswa</button>`}
       </div>
 
-      ${editMode ? `<div class="edit-note">✏️ <span><b>Mode edit aktif.</b> Ketik langsung pada Data Diri, Hasil Belajar, Prestasi, dan Ekstrakurikuler. Klik foto profil untuk mengunggah foto. Klik <b>Simpan &amp; Selesai</b> bila sudah.</span></div>` : ""}
+      ${readOnly ? `<div class="edit-note" style="background:#eefbf3;border-color:#bfe9cd;color:#0b3d2e">👁️ <span><b>Mode lihat.</b> Anda dapat melihat dan mengunduh berkas. Data hanya dapat diubah oleh guru kelas.</span></div>` : ""}
+      ${(editMode && !readOnly) ? `<div class="edit-note">✏️ <span><b>Mode edit aktif.</b> Ketik langsung pada Data Diri, Hasil Belajar, Prestasi, dan Ekstrakurikuler. Klik foto profil untuk mengunggah foto. Klik <b>Simpan &amp; Selesai</b> bila sudah.</span></div>` : ""}
 
       <div class="pf-head">
-        ${avatar(st, editMode ? "photo-click" : "")}
+        ${avatar(st, (editMode && !readOnly) ? "photo-click" : "")}
         <div>
           <h2 id="pfName">${esc(st.name)}</h2>
           <div class="sub" id="pfSub">${st.kelas ? "Kelas "+esc(st.kelas)+" · " : ""}NIS ${esc(st.nis||"-")} · ${esc(st.sekolah || "MI AZ-ZAHRO")}</div>
@@ -1132,9 +1240,11 @@ function renderPortfolio(st, folder){
       <div class="foot">Portofolio digital MI AZ-ZAHRO · dikelola oleh guru kelas</div>
     </div>`;
 
-  document.getElementById("backBtn").addEventListener("click", ()=>{ location.hash = ""; });
-  document.getElementById("editBtn").addEventListener("click", toggleEdit);
-  document.getElementById("shareBtn").addEventListener("click", ()=> copyLink("#/s/" + st.id, "Link " + st.name));
+  document.getElementById("backBtn").addEventListener("click", ()=>{ location.hash = backHash; });
+  const editBtnEl = document.getElementById("editBtn");
+  if(editBtnEl) editBtnEl.addEventListener("click", toggleEdit);
+  const shareBtnEl = document.getElementById("shareBtn");
+  if(shareBtnEl) shareBtnEl.addEventListener("click", ()=> copyLink("#/s/" + st.id, "Link " + st.name));
   const dsb = document.getElementById("delStudentBtn");
   if(dsb) dsb.addEventListener("click", ()=>{
     confirmDialog(`Hapus siswa <b>${esc(st.name)}</b> beserta seluruh portofolionya?`, ()=>{
@@ -1158,8 +1268,64 @@ function renderPortfolio(st, folder){
 /* ============================================================
    Router
    ============================================================ */
-function route(){
+function exitShare(){
+  readOnly = false;
+  shareState = null;
+  if(localSnapshot){
+    students = localSnapshot.students;
+    classes = localSnapshot.classes;
+    for(const k in uploads) delete uploads[k];
+    Object.assign(uploads, localSnapshot.uploads || {});
+    localSnapshot = null;
+  }
+}
+
+async function route(){
   const h = decodeURIComponent(location.hash || "");
+
+  // 1) link berbagi — data ada di dalam link
+  if(h.indexOf("#w=") === 0){
+    if(!localSnapshot) localSnapshot = { students, classes, uploads };
+    try{
+      const p = await unpackShare(h.slice(3));
+      shareState = {
+        classes: Array.isArray(p.classes) ? p.classes.slice() : [],
+        students: (p.students || []).map(ensureStudentShape),
+        uploads: p.uploads || {},
+        mode: p.mode || "all",
+        kelas: p.kelas || "all"
+      };
+      readOnly = true;
+      students = shareState.students;
+      classes = shareState.classes;
+      for(const k in uploads) delete uploads[k];
+      Object.assign(uploads, shareState.uploads);
+      renderClassView(shareState.kelas);
+    }catch(e){
+      exitShare();
+      toast("Link tidak valid atau rusak.");
+      renderHome();
+    }
+    window.scrollTo(0,0);
+    return;
+  }
+
+  // 2) masih di mode lihat (pindah folder / buka siswa)
+  if(shareState){
+    let m = h.match(/^#\/s\/([^\/]+)(?:\/([^\/]+))?$/);
+    if(m){
+      const st = shareState.students.find(s => s.id === m[1]);
+      if(st){ renderPortfolio(st, m[2] || "all"); window.scrollTo(0,0); return; }
+    }
+    m = h.match(/^#\/kelas\/(.+)$/);
+    if(m){ renderClassView(m[1]); window.scrollTo(0,0); return; }
+    exitShare();
+    renderHome();
+    window.scrollTo(0,0);
+    return;
+  }
+
+  // 3) mode walas (normal)
   let m = h.match(/^#\/s\/([^\/]+)(?:\/([^\/]+))?$/);
   if(m){
     const st = students.find(s => s.id === m[1]);
